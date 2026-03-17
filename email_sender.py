@@ -25,186 +25,18 @@ _HTML_HEAD = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JobHelp Version 1 — Daily Digest</title>
-<style>
-  body {{
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-                 Oxygen, Ubuntu, sans-serif;
-    background: #f4f6f9;
-    color: #333;
-    margin: 0;
-    padding: 0;
-  }}
-  .wrapper {{
-    max-width: 780px;
-    margin: 24px auto;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.08);
-    overflow: hidden;
-  }}
-  .header {{
-    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
-    color: #fff;
-    padding: 28px 32px;
-  }}
-  .header h1 {{
-    margin: 0 0 6px;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: .3px;
-  }}
-  .header p {{
-    margin: 0;
-    opacity: .85;
-    font-size: 14px;
-  }}
-  .summary-bar {{
-    background: #f0f4ff;
-    border-bottom: 1px solid #dbe4f5;
-    padding: 12px 32px;
-    font-size: 13px;
-    color: #555;
-    display: flex;
-    gap: 24px;
-  }}
-  .summary-bar strong {{ color: #1e3a5f; font-size: 15px; }}
-  .section-title {{
-    font-size: 18px;
-    font-weight: 700;
-    color: #1e3a5f;
-    padding: 24px 32px 8px;
-    border-bottom: 2px solid #e8edf5;
-    margin: 0;
-  }}
-  .board-badge {{
-    display: inline-block;
-    background: #e8edf5;
-    color: #1e3a5f;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
-    margin-right: 6px;
-    text-transform: uppercase;
-    letter-spacing: .5px;
-  }}
-  table {{
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-  }}
-  th {{
-    text-align: left;
-    padding: 10px 16px;
-    background: #f8fafc;
-    color: #888;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-    font-weight: 600;
-    border-bottom: 1px solid #e2e8f0;
-  }}
-  td {{
-    padding: 12px 16px;
-    border-bottom: 1px solid #f0f0f0;
-    vertical-align: top;
-  }}
-  tr:hover td {{ background: #fafbff; }}
-  a.job-link {{
-    color: #2563eb;
-    text-decoration: none;
-    font-weight: 600;
-  }}
-  a.job-link:hover {{ text-decoration: underline; }}
-  .company {{ color: #555; }}
-  .location {{ color: #888; font-size: 13px; }}
-  .posted {{ color: #aaa; font-size: 12px; white-space: nowrap; }}
-  .remote-badge {{
-    background: #dcfce7;
-    color: #166534;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 4px;
-    margin-left: 6px;
-    text-transform: uppercase;
-  }}
-  .no-jobs {{
-    padding: 20px 32px;
-    color: #999;
-    font-style: italic;
-    font-size: 14px;
-  }}
-  .footer {{
-    background: #f8fafc;
-    padding: 18px 32px;
-    font-size: 12px;
-    color: #aaa;
-    border-top: 1px solid #e2e8f0;
-    text-align: center;
-  }}
-  .toc {{
-    padding: 16px 32px 8px;
-    font-size: 13px;
-    color: #555;
-  }}
-  .toc a {{
-    color: #2563eb;
-    text-decoration: none;
-    margin-right: 14px;
-  }}
-  .toc a:hover {{ text-decoration: underline; }}
-
-  @media only screen and (max-width: 600px) {{
-    .wrapper {{
-      width: 100% !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
-    }}
-    .header {{
-      padding: 16px !important;
-    }}
-    .header h1 {{
-      font-size: 18px !important;
-    }}
-    .summary-bar {{
-      flex-direction: column !important;
-      gap: 6px !important;
-      padding: 10px 16px !important;
-    }}
-    .section-title {{
-      padding: 16px 16px 8px !important;
-      font-size: 16px !important;
-    }}
-    .toc {{
-      padding: 10px 16px 6px !important;
-    }}
-    .toc a {{
-      display: inline-block;
-      margin-bottom: 4px;
-    }}
-    th, td {{
-      padding: 8px 10px !important;
-      font-size: 13px !important;
-    }}
-    .hide-mobile {{
-      display: none !important;
-    }}
-    .footer {{
-      padding: 14px 16px !important;
-    }}
-  }}
-</style>
+<title>JobHelp — Daily Digest</title>
 </head>
-<body>
-<div class="wrapper">
+<body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+             background:#f4f6f9;color:#333;margin:0;padding:0;">
+<div style="max-width:600px;margin:0 auto;background:#f4f6f9;">
 """
 
 _HTML_FOOT = """\
-  <div class="footer">
-    JobHelp Version 1 &bull; Generated {generated} UTC<br>
-    To adjust search titles, boards, or schedule — edit <code>config.yaml</code>.
+  <div style="background:#f8fafc;padding:16px 20px;font-size:12px;color:#aaa;
+              border-top:1px solid #e2e8f0;text-align:center;">
+    JobHelp &bull; Generated {generated} UTC &bull;
+    Edit <code>config.yaml</code> to adjust searches.
   </div>
 </div>
 </body>
@@ -237,99 +69,128 @@ def _escape(text: str) -> str:
 
 # ── Report builder ────────────────────────────────────────────────────────────
 
+def _sort_key(j: Job) -> datetime:
+    if j.posted is None:
+        return datetime.min.replace(tzinfo=timezone.utc)
+    if j.posted.tzinfo is None:
+        return j.posted.replace(tzinfo=timezone.utc)
+    return j.posted
+
+
+def _job_card(job: Job) -> str:
+    """Render a single job as an inline-styled card (works in all email clients)."""
+    if job.url:
+        title_html = (
+            f'<a href="{_escape(job.url)}" target="_blank" '
+            f'style="color:#2563eb;font-weight:700;font-size:16px;'
+            f'text-decoration:none;line-height:1.4;">'
+            f'{_escape(job.title)}</a>'
+        )
+    else:
+        title_html = (
+            f'<span style="font-weight:700;font-size:16px;color:#1e3a5f;">'
+            f'{_escape(job.title)}</span>'
+        )
+
+    remote_badge = ""
+    if job.remote:
+        remote_badge = (
+            '<span style="background:#dcfce7;color:#166534;font-size:10px;'
+            'font-weight:700;padding:2px 7px;border-radius:4px;'
+            'margin-left:8px;text-transform:uppercase;vertical-align:middle;">'
+            'Remote</span>'
+        )
+
+    board_badge = (
+        f'<span style="background:#e8edf5;color:#1e3a5f;font-size:11px;'
+        f'font-weight:600;padding:2px 8px;border-radius:12px;'
+        f'text-transform:uppercase;letter-spacing:.5px;">'
+        f'{_escape(job.source)}</span>'
+    )
+
+    posted_str = _fmt_posted(job.posted)
+
+    return (
+        f'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;'
+        f'margin:8px 16px;padding:14px 16px;">'
+        f'  <div style="line-height:1.4;">{title_html}{remote_badge}</div>'
+        f'  <div style="color:#555;font-size:13px;margin-top:6px;">{_escape(job.company)}</div>'
+        f'  <div style="color:#888;font-size:12px;margin-top:2px;">{_escape(job.location)}</div>'
+        f'  <div style="margin-top:10px;">'
+        f'    {board_badge}'
+        f'    <span style="color:#aaa;font-size:12px;margin-left:10px;">{posted_str}</span>'
+        f'  </div>'
+        f'</div>\n'
+    )
+
+
 def build_html_report(jobs: List[Job], config: dict) -> str:
-    """Return a complete HTML email body."""
+    """Return a complete HTML email body using inline-styled cards."""
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     hours = config.get("search", {}).get("hours_ago", 24)
+    job_titles = config.get("job_titles", [])
 
     # Group by search_term
     by_title: dict[str, List[Job]] = defaultdict(list)
     for job in jobs:
         by_title[job.search_term].append(job)
 
-    # Build TOC entries
-    job_titles = config.get("job_titles", [])
-    toc_items = []
+    html = _HTML_HEAD
+
+    # ── Header ────────────────────────────────────────────────────────────────
+    html += (
+        f'<div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);'
+        f'color:#fff;padding:24px 20px;">'
+        f'  <div style="font-size:22px;font-weight:700;margin:0 0 6px;">&#128188; JobHelp &mdash; Daily Digest</div>'
+        f'  <div style="opacity:.85;font-size:13px;">Last {hours}h &bull; {now_str} UTC &bull; {len(jobs)} jobs found</div>'
+        f'</div>\n'
+    )
+
+    # ── Summary bar ───────────────────────────────────────────────────────────
+    boards = len({j.source for j in jobs})
+    html += (
+        f'<div style="background:#f0f4ff;border-bottom:1px solid #dbe4f5;'
+        f'padding:12px 20px;font-size:13px;color:#555;">'
+        f'  <span style="margin-right:20px;">Total: <strong style="color:#1e3a5f;">{len(jobs)}</strong></span>'
+        f'  <span style="margin-right:20px;">Boards: <strong style="color:#1e3a5f;">{boards}</strong></span>'
+        f'  <span>Titles: <strong style="color:#1e3a5f;">{len(job_titles)}</strong></span>'
+        f'</div>\n'
+    )
+
+    # ── Section per job title ─────────────────────────────────────────────────
     for title in job_titles:
-        count = len(by_title.get(title, []))
-        anchor = title.lower().replace(" ", "-").replace("/", "")
-        toc_items.append(
-            f'<a href="#{anchor}">{_escape(title)} ({count})</a>'
+        title_jobs = sorted(by_title.get(title, []), key=_sort_key, reverse=True)
+        count = len(title_jobs)
+
+        html += (
+            f'<div style="font-size:17px;font-weight:700;color:#1e3a5f;'
+            f'padding:20px 20px 10px;border-bottom:2px solid #e8edf5;">'
+            f'  {_escape(title)}'
+            f'  <span style="font-size:13px;font-weight:400;color:#888;margin-left:8px;">({count})</span>'
+            f'</div>\n'
         )
 
-    # Header
-    html = _HTML_HEAD
-    html += f"""
-  <div class="header">
-    <h1>&#128188; JobHelp Version 1 &mdash; Daily Digest</h1>
-    <p>Jobs posted in the last {hours} hours &bull; {now_str} UTC &bull; {len(jobs)} total results</p>
-  </div>
-  <div class="summary-bar">
-    <span>Total jobs found: <strong>{len(jobs)}</strong></span>
-    <span>Boards searched: <strong>{len({j.source for j in jobs})}</strong></span>
-    <span>Titles searched: <strong>{len(job_titles)}</strong></span>
-  </div>
-  <div class="toc">
-    <strong>Jump to:</strong>&nbsp; {''.join(toc_items)}
-  </div>
-"""
-
-    # Section per job title
-    for title in job_titles:
-        title_jobs = by_title.get(title, [])
-        anchor = title.lower().replace(" ", "-").replace("/", "")
-        html += f'<h2 class="section-title" id="{anchor}">{_escape(title)}</h2>\n'
-
         if not title_jobs:
-            html += '<p class="no-jobs">No results found in the last 24 hours for this title.</p>\n'
+            html += (
+                '<div style="padding:16px 20px;color:#999;font-style:italic;font-size:14px;">'
+                'No new results in this window.</div>\n'
+            )
             continue
 
-        html += """
-  <table>
-    <thead>
-      <tr>
-        <th>Job Title</th>
-        <th>Company</th>
-        <th>Location</th>
-        <th class="hide-mobile">Board</th>
-        <th class="hide-mobile">Posted</th>
-      </tr>
-    </thead>
-    <tbody>
-"""
-        def _sort_key(j):
-            if j.posted is None:
-                return datetime.min.replace(tzinfo=timezone.utc)
-            if j.posted.tzinfo is None:
-                return j.posted.replace(tzinfo=timezone.utc)
-            return j.posted
+        for job in title_jobs:
+            html += _job_card(job)
 
-        for job in sorted(title_jobs, key=_sort_key, reverse=True):
-            link = (f'<a class="job-link" href="{_escape(job.url)}" '
-                    f'target="_blank">{_escape(job.title)}</a>'
-                    if job.url else _escape(job.title))
-            remote_badge = '<span class="remote-badge">Remote</span>' if job.remote else ""
-            html += f"""
-      <tr>
-        <td>{link}{remote_badge}</td>
-        <td class="company">{_escape(job.company)}</td>
-        <td class="location">{_escape(job.location)}</td>
-        <td class="hide-mobile"><span class="board-badge">{_escape(job.source)}</span></td>
-        <td class="posted hide-mobile">{_fmt_posted(job.posted)}</td>
-      </tr>"""
+        html += '<div style="height:8px;"></div>\n'
 
-        html += "\n    </tbody>\n  </table>\n"
-
-    # Any jobs whose title wasn't in the configured list (edge case)
+    # ── Uncategorized (edge case) ─────────────────────────────────────────────
     uncategorized = [j for j in jobs if j.search_term not in job_titles]
     if uncategorized:
-        html += '<h2 class="section-title">Other Results</h2>\n'
-        html += "<table><thead><tr><th>Title</th><th>Company</th><th>Location</th><th>Board</th><th>Posted</th></tr></thead><tbody>\n"
-        for job in uncategorized:
-            link = (f'<a class="job-link" href="{_escape(job.url)}">{_escape(job.title)}</a>'
-                    if job.url else _escape(job.title))
-            html += f"<tr><td>{link}</td><td>{_escape(job.company)}</td><td>{_escape(job.location)}</td><td><span class='board-badge'>{_escape(job.source)}</span></td><td class='posted'>{_fmt_posted(job.posted)}</td></tr>\n"
-        html += "</tbody></table>\n"
+        html += (
+            '<div style="font-size:17px;font-weight:700;color:#1e3a5f;'
+            'padding:20px 20px 10px;border-bottom:2px solid #e8edf5;">Other Results</div>\n'
+        )
+        for job in sorted(uncategorized, key=_sort_key, reverse=True):
+            html += _job_card(job)
 
     html += _HTML_FOOT.format(generated=now_str)
     return html
