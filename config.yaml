@@ -3,7 +3,7 @@
 #  Edit this file to customize boards, titles, and schedule.
 # ============================================================
 
-version: "JobHelp Version 1"
+version: "JobHelp Version 2"
 
 # ── Job titles to search for ────────────────────────────────
 # Add or remove titles as needed.
