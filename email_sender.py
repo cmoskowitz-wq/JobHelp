@@ -155,6 +155,46 @@ _HTML_HEAD = """\
     margin-right: 14px;
   }}
   .toc a:hover {{ text-decoration: underline; }}
+
+  @media only screen and (max-width: 600px) {{
+    .wrapper {{
+      width: 100% !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+    }}
+    .header {{
+      padding: 16px !important;
+    }}
+    .header h1 {{
+      font-size: 18px !important;
+    }}
+    .summary-bar {{
+      flex-direction: column !important;
+      gap: 6px !important;
+      padding: 10px 16px !important;
+    }}
+    .section-title {{
+      padding: 16px 16px 8px !important;
+      font-size: 16px !important;
+    }}
+    .toc {{
+      padding: 10px 16px 6px !important;
+    }}
+    .toc a {{
+      display: inline-block;
+      margin-bottom: 4px;
+    }}
+    th, td {{
+      padding: 8px 10px !important;
+      font-size: 13px !important;
+    }}
+    .hide-mobile {{
+      display: none !important;
+    }}
+    .footer {{
+      padding: 14px 16px !important;
+    }}
+  }}
 </style>
 </head>
 <body>
@@ -251,8 +291,8 @@ def build_html_report(jobs: List[Job], config: dict) -> str:
         <th>Job Title</th>
         <th>Company</th>
         <th>Location</th>
-        <th>Board</th>
-        <th>Posted</th>
+        <th class="hide-mobile">Board</th>
+        <th class="hide-mobile">Posted</th>
       </tr>
     </thead>
     <tbody>
@@ -274,8 +314,8 @@ def build_html_report(jobs: List[Job], config: dict) -> str:
         <td>{link}{remote_badge}</td>
         <td class="company">{_escape(job.company)}</td>
         <td class="location">{_escape(job.location)}</td>
-        <td><span class="board-badge">{_escape(job.source)}</span></td>
-        <td class="posted">{_fmt_posted(job.posted)}</td>
+        <td class="hide-mobile"><span class="board-badge">{_escape(job.source)}</span></td>
+        <td class="posted hide-mobile">{_fmt_posted(job.posted)}</td>
       </tr>"""
 
         html += "\n    </tbody>\n  </table>\n"

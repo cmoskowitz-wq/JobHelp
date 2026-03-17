@@ -596,42 +596,67 @@ class CareerBuilderScraper(BaseScraper):
 # ── Dice ──────────────────────────────────────────────────────────────────────
 
 class DiceScraper(BaseScraper):
-    """API — Dice internal search API (no credentials needed)."""
+    """Playwright — Dice.com job search (headless browser to avoid 403)."""
     name = "Dice"
-    _API = "https://job-search-api.svc.dhigroupinc.com/v1/dice/jobs/search"
 
     def fetch(self, job_title: str) -> List[Job]:
-        params = {
+        params = urllib.parse.urlencode({
             "q": job_title,
-            "countryCode2": "US",
+            "countryCode": "US",
             "radius": "30",
             "radiusUnit": "mi",
-            "page": 1,
-            "pageSize": self.max_results,
-            "filters.postedDate": "ONE",
+            "datePosted": "ONE",
             "sort": "-postedDate",
-        }
-        if self.location:
-            params["location"] = self.location
-
-        data = self._api_get(self._API, params=params, json_response=True)
-        if not data:
+        })
+        url = f"https://www.dice.com/jobs?{params}"
+        soup = self._pw_get(
+            url,
+            wait_selector="dhi-job-search-job-card, div.search-card",
+            wait_ms=4000,
+        )
+        if not soup:
             return []
 
         jobs: List[Job] = []
-        for item in data.get("data", []):
-            posted = _parse_iso(item.get("postedDate", ""))
-            job_id = item.get("id", "")
-            url = f"https://www.dice.com/job-detail/{job_id}" if job_id else ""
+        cards = soup.select(
+            "dhi-job-search-job-card, div.search-card"
+        )[: self.max_results]
+        for card in cards:
+            title_el = (
+                card.select_one("a.card-title-link")
+                or card.select_one("[data-cy='card-title-link']")
+                or card.select_one("a[id^='jobTitle']")
+            )
+            company_el = (
+                card.select_one("a.company-name-link")
+                or card.select_one("[data-cy='search-result-company-name']")
+            )
+            location_el = (
+                card.select_one("span.search-result-location")
+                or card.select_one("[data-cy='search-result-location']")
+            )
+            date_el = card.select_one(
+                "span.posted-date, [data-cy='card-posted-date']"
+            )
+
+            if not title_el:
+                continue
+
+            href = title_el.get("href", "")
+            if href and not href.startswith("http"):
+                href = "https://www.dice.com" + href
+
+            posted = _parse_relative_date(
+                date_el.get_text(strip=True) if date_el else ""
+            )
 
             job = Job(
-                title=item.get("title", "N/A"),
-                company=item.get("companyPageUrl", item.get("company", "Unknown")),
-                location=item.get("location", self.location or "US"),
-                url=url,
+                title=title_el.get_text(strip=True),
+                company=company_el.get_text(strip=True) if company_el else "Unknown",
+                location=location_el.get_text(strip=True) if location_el else self.location or "US",
+                url=href,
                 source=self.name,
                 posted=posted,
-                remote="Remote" in item.get("workplaceTypes", []),
             )
             if job.is_recent(self.hours_ago):
                 jobs.append(job)
