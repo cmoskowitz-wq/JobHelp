@@ -257,9 +257,14 @@ def build_html_report(jobs: List[Job], config: dict) -> str:
     </thead>
     <tbody>
 """
-        for job in sorted(title_jobs,
-                          key=lambda j: j.posted or datetime.min.replace(tzinfo=timezone.utc),
-                          reverse=True):
+        def _sort_key(j):
+            if j.posted is None:
+                return datetime.min.replace(tzinfo=timezone.utc)
+            if j.posted.tzinfo is None:
+                return j.posted.replace(tzinfo=timezone.utc)
+            return j.posted
+
+        for job in sorted(title_jobs, key=_sort_key, reverse=True):
             link = (f'<a class="job-link" href="{_escape(job.url)}" '
                     f'target="_blank">{_escape(job.title)}</a>'
                     if job.url else _escape(job.title))
