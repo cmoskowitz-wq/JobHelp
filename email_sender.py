@@ -32,11 +32,14 @@ _HTML_HEAD = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <title>JobHelp — Daily Digest</title>
 </head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-             background:#f4f6f9;color:#333;margin:0;padding:0;">
-<div style="max-width:620px;margin:0 auto;background:#f4f6f9;">
+             background:#f4f6f9;color:#333;margin:0;padding:0;-webkit-text-size-adjust:100%;
+             word-break:break-word;">
+<div style="max-width:620px;width:100%;margin:0 auto;background:#f4f6f9;">
 """
 
 _HTML_FOOT = """\
@@ -88,6 +91,14 @@ def _escape(text: str) -> str:
     )
 
 
+_UNKNOWN_VALUES = {"unknown", "n/a", "not specified", "none", "null", ""}
+
+
+def _clean(value: str) -> str:
+    """Return the value if meaningful, otherwise empty string."""
+    return "" if value.strip().lower() in _UNKNOWN_VALUES else value.strip()
+
+
 # ── Sort helpers ──────────────────────────────────────────────────────────────
 
 def _sort_key(j: Job) -> tuple:
@@ -113,12 +124,12 @@ def _job_card(job: Job) -> str:
         title_html = (
             f'<a href="{_escape(job.url)}" target="_blank" '
             f'style="color:#2563eb;font-weight:700;font-size:16px;'
-            f'text-decoration:none;line-height:1.4;">'
+            f'text-decoration:none;line-height:1.4;display:inline;">'
             f'{_escape(job.title)}</a>'
         )
     else:
         title_html = (
-            f'<span style="font-weight:700;font-size:16px;color:#1e3a5f;">'
+            f'<span style="font-weight:700;font-size:16px;color:#1e3a5f;line-height:1.4;">'
             f'{_escape(job.title)}</span>'
         )
 
@@ -126,23 +137,25 @@ def _job_card(job: Job) -> str:
     badges = ""
     if job.geo_priority:
         badges += (
-            '<span style="background:#fef3c7;color:#92400e;font-size:10px;'
-            'font-weight:700;padding:2px 7px;border-radius:4px;'
-            'margin-left:8px;text-transform:uppercase;vertical-align:middle;">'
-            '&#128205; NJ/CT/NYC</span>'
+            '<span style="background:#fef3c7;color:#92400e;font-size:11px;'
+            'font-weight:700;padding:3px 8px;border-radius:4px;'
+            'margin-left:8px;text-transform:uppercase;white-space:nowrap;'
+            'display:inline-block;vertical-align:middle;">'
+            '&#128205;&nbsp;NJ/CT/NYC</span>'
         )
     if job.remote:
         badges += (
-            '<span style="background:#dcfce7;color:#166534;font-size:10px;'
-            'font-weight:700;padding:2px 7px;border-radius:4px;'
-            'margin-left:8px;text-transform:uppercase;vertical-align:middle;">'
+            '<span style="background:#dcfce7;color:#166534;font-size:11px;'
+            'font-weight:700;padding:3px 8px;border-radius:4px;'
+            'margin-left:8px;text-transform:uppercase;white-space:nowrap;'
+            'display:inline-block;vertical-align:middle;">'
             'Remote</span>'
         )
 
     board_badge = (
         f'<span style="background:#e8edf5;color:#1e3a5f;font-size:11px;'
-        f'font-weight:600;padding:2px 8px;border-radius:12px;'
-        f'text-transform:uppercase;letter-spacing:.5px;">'
+        f'font-weight:600;padding:3px 9px;border-radius:12px;'
+        f'text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">'
         f'{_escape(job.source)}</span>'
     )
 
@@ -161,7 +174,7 @@ def _job_card(job: Job) -> str:
         )
         ai_badge = (
             f'<span style="background:{score_bg};color:{score_color};font-size:11px;'
-            f'font-weight:700;padding:2px 8px;border-radius:12px;margin-left:6px;">'
+            f'font-weight:700;padding:3px 9px;border-radius:12px;margin-left:6px;white-space:nowrap;">'
             f'AI&nbsp;{job.ai_score:.1f}/10</span>'
         )
 
@@ -170,16 +183,37 @@ def _job_card(job: Job) -> str:
     salary_html = ""
     if salary_str:
         salary_html = (
-            f'<div style="color:#166534;font-size:13px;font-weight:600;margin-top:4px;">'
-            f'&#128176; {_escape(salary_str)}</div>'
+            f'<div style="color:#166534;font-size:13px;font-weight:600;margin-top:6px;">'
+            f'&#128176;&nbsp;{_escape(salary_str)}</div>'
         )
 
     # ── AI summary ────────────────────────────────────────────────────────────
     summary_html = ""
     if job.ai_summary:
         summary_html = (
-            f'<div style="color:#6b7280;font-size:12px;font-style:italic;margin-top:4px;">'
+            f'<div style="color:#6b7280;font-size:13px;font-style:italic;margin-top:6px;line-height:1.4;">'
             f'{_escape(job.ai_summary)}</div>'
+        )
+
+    # ── Company / Location (skip if "Unknown" or empty) ───────────────────────
+    company = _clean(job.company)
+    location = _clean(job.location)
+
+    meta_parts = []
+    if company:
+        meta_parts.append(
+            f'<span style="color:#444;font-size:14px;font-weight:600;">{_escape(company)}</span>'
+        )
+    if location:
+        meta_parts.append(
+            f'<span style="color:#888;font-size:13px;">{_escape(location)}</span>'
+        )
+    meta_html = ""
+    if meta_parts:
+        meta_html = (
+            '<div style="margin-top:6px;line-height:1.5;">'
+            + '<span style="color:#ccc;margin:0 6px;">|</span>'.join(meta_parts)
+            + '</div>'
         )
 
     posted_str = _fmt_posted(job.posted)
@@ -190,15 +224,14 @@ def _job_card(job: Job) -> str:
     return (
         f'<div style="background:#fff;border:1px solid {border_color};'
         f'border-left:4px solid {border_color};border-radius:8px;'
-        f'margin:8px 16px;padding:14px 16px;">'
-        f'  <div style="line-height:1.4;">{title_html}{badges}</div>'
-        f'  <div style="color:#555;font-size:13px;margin-top:6px;">{_escape(job.company)}</div>'
-        f'  <div style="color:#888;font-size:12px;margin-top:2px;">{_escape(job.location)}</div>'
+        f'margin:8px 12px;padding:14px 16px;box-sizing:border-box;">'
+        f'  <div style="line-height:1.5;word-break:break-word;">{title_html}{badges}</div>'
+        f'  {meta_html}'
         f'  {salary_html}'
         f'  {summary_html}'
-        f'  <div style="margin-top:10px;">'
+        f'  <div style="margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">'
         f'    {board_badge}{ai_badge}'
-        f'    <span style="color:#aaa;font-size:12px;margin-left:10px;">{posted_str}</span>'
+        f'    <span style="color:#aaa;font-size:12px;margin-left:4px;">{posted_str}</span>'
         f'  </div>'
         f'</div>\n'
     )
@@ -245,9 +278,15 @@ def build_html_report(jobs: List[Job], config: dict) -> str:
     html += (
         f'<div style="background:#f0f4ff;border-bottom:1px solid #dbe4f5;'
         f'padding:12px 20px;font-size:13px;color:#555;">'
-        f'  <span style="margin-right:20px;">Total: <strong style="color:#1e3a5f;">{len(jobs)}</strong></span>'
-        f'  <span style="margin-right:20px;">Boards: <strong style="color:#1e3a5f;">{boards}</strong></span>'
-        f'  <span style="margin-right:20px;">Titles: <strong style="color:#1e3a5f;">{len(job_titles)}</strong></span>'
+        f'  <span style="display:inline-block;margin-right:16px;white-space:nowrap;">'
+        f'    Total: <strong style="color:#1e3a5f;">{len(jobs)}</strong>'
+        f'  </span>'
+        f'  <span style="display:inline-block;margin-right:16px;white-space:nowrap;">'
+        f'    Boards: <strong style="color:#1e3a5f;">{boards}</strong>'
+        f'  </span>'
+        f'  <span style="display:inline-block;margin-right:16px;white-space:nowrap;">'
+        f'    Titles: <strong style="color:#1e3a5f;">{len(job_titles)}</strong>'
+        f'  </span>'
         f'  {geo_badge}{ai_badge_bar}'
         f'</div>\n'
     )
