@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 """
-main.py — JobHelp Version 2
-Entry point: loads config, runs all scrapers via headless browser,
-applies smart time-window + deduplication, emails the digest,
-and optionally keeps running on a schedule.
+main.py — JobHelp Version 3
+Entry point: loads config, runs all scrapers in parallel (async Playwright),
+applies smart time-window + fuzzy deduplication, geo-priority sorts NJ/CT/NYC
+jobs to the top, optionally scores with Claude AI, emails the digest, fires
+Slack/SMS notifications, persists state, and provides a web dashboard.
 
 Usage:
-  python main.py              # run once immediately, then schedule
-  python main.py --now        # run immediately and exit
-  python main.py --dry-run    # run scrapers, print report, don't send email
-  python main.py --list-boards
+  python main.py                   # run once immediately, then schedule
+  python main.py --now             # run immediately and exit
+  python main.py --dry-run         # run scrapers, print report, don't send email
+  python main.py --dashboard       # launch the web dashboard (port 5000)
+  python main.py --list-boards     # list all supported job boards and exit
 """
 
 from __future__ import annotations
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
@@ -26,11 +29,24 @@ from pathlib import Path
 import schedule
 import yaml
 from dotenv import load_dotenv
-from playwright.sync_api import sync_playwright
+from playwright.async_api import async_playwright
 
+from ai_scorer import score_jobs
 from email_sender import build_html_report, send_report
-from scrapers import Job, build_scrapers, deduplicate
-from state import filter_seen, get_hours_window, mark_seen, record_run
+from notifier import send_slack_notification, send_sms_notification
+from scrapers import (
+    Job,
+    fuzzy_deduplicate,
+    geo_sort,
+    run_all_scrapers_async,
+)
+from state import (
+    filter_seen,
+    get_hours_window,
+    mark_seen,
+    record_run,
+    save_jobs_to_cache,
+)
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 
@@ -53,12 +69,14 @@ def load_config() -> dict:
     with open(CONFIG_PATH, "r") as fh:
         cfg = yaml.safe_load(fh)
 
+    # Email credentials
     email = cfg.setdefault("email", {})
     if os.getenv("EMAIL_SENDER"):
         email["sender"] = os.environ["EMAIL_SENDER"]
     if os.getenv("EMAIL_PASSWORD"):
         email["password"] = os.environ["EMAIL_PASSWORD"]
 
+    # Adzuna API keys
     boards = cfg.setdefault("job_boards", {})
     adzuna = boards.setdefault("adzuna", {})
     if os.getenv("ADZUNA_APP_ID"):
@@ -66,68 +84,78 @@ def load_config() -> dict:
     if os.getenv("ADZUNA_APP_KEY"):
         adzuna["app_key"] = os.environ["ADZUNA_APP_KEY"]
 
+    # Slack / SMS tokens are read directly from env in notifier.py
     return cfg
 
 
-# ── Core job ──────────────────────────────────────────────────────────────────
+# ── Async core job ────────────────────────────────────────────────────────────
 
-def run_job(cfg: dict, dry_run: bool = False) -> list[Job]:
+async def _run_job_async(cfg: dict, dry_run: bool = False) -> list[Job]:
     """
-    Run all scrapers, apply smart time-window + state-based dedup,
-    email the digest (unless dry_run), and persist state.
+    Async implementation:
+      1. Determine smart time-window
+      2. Launch headless browser
+      3. Run ALL scrapers in parallel via asyncio.gather
+      4. Fuzzy dedup + state filter
+      5. Geo-sort (NJ/CT/NYC first)
+      6. AI score (optional)
+      7. Cache for dashboard
+      8. Email + Slack/SMS (unless dry_run)
     """
     job_titles: list[str] = cfg.get("job_titles", [])
     if not job_titles:
         logger.warning("No job titles configured — nothing to search.")
         return []
 
-    # ── Determine search window ───────────────────────────────────────────────
+    # ── Smart time-window ─────────────────────────────────────────────────────
     hours_window = get_hours_window()
     logger.info("Search window: last %d hour(s).", hours_window)
-
-    # Inject the dynamic window into a copy of config (don't mutate original)
     cfg = {**cfg, "search": {**cfg.get("search", {}), "hours_ago": hours_window}}
 
-    # ── Launch browser + scrape ───────────────────────────────────────────────
-    all_jobs: list[Job] = []
-
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(
+    # ── Parallel scraping ─────────────────────────────────────────────────────
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(
             headless=True,
             args=["--disable-blink-features=AutomationControlled"],
         )
         try:
-            scrapers = build_scrapers(cfg, browser)
-            if not scrapers:
-                logger.warning("No job boards enabled — check config.yaml.")
-                return []
-
-            logger.info(
-                "JobHelp v2 — %d board(s) × %d title(s)",
-                len(scrapers), len(job_titles),
-            )
-
-            for scraper in scrapers:
-                logger.info("  Scraping %s ...", scraper.name)
-                jobs = scraper.search_all(job_titles)
-                logger.info("    → %d result(s)", len(jobs))
-                all_jobs.extend(jobs)
+            all_jobs = await run_all_scrapers_async(cfg, browser, job_titles)
         finally:
-            browser.close()
+            await browser.close()
 
-    # ── Dedup: cross-board (same title+company) ───────────────────────────────
-    all_jobs = deduplicate(all_jobs)
-    logger.info("After cross-board dedup: %d unique job(s).", len(all_jobs))
+    # ── Fuzzy cross-board dedup ───────────────────────────────────────────────
+    all_jobs = fuzzy_deduplicate(all_jobs)
+    logger.info("After fuzzy dedup: %d unique job(s).", len(all_jobs))
 
-    # ── Dedup: cross-run (already seen today) ─────────────────────────────────
+    # ── Cross-run dedup (already seen today) ──────────────────────────────────
     all_jobs = filter_seen(all_jobs)
     logger.info("After state filter: %d new job(s) to report.", len(all_jobs))
+
+    if not all_jobs:
+        logger.info("No new jobs to report.")
+        return []
+
+    # ── Geo-priority sort (NJ/CT/NYC float to top) ────────────────────────────
+    geo_regions = cfg.get("geo_priority", {}).get("regions", None)
+    all_jobs = geo_sort(all_jobs, geo_regions)
+    geo_count = sum(1 for j in all_jobs if j.geo_priority)
+    if geo_count:
+        logger.info("Geo-priority: %d NJ/CT/NYC job(s) sorted to top.", geo_count)
+
+    # ── AI scoring (optional) ─────────────────────────────────────────────────
+    if cfg.get("ai", {}).get("enabled", False):
+        all_jobs = score_jobs(all_jobs, cfg)
+
+    # ── Persist for dashboard ─────────────────────────────────────────────────
+    save_jobs_to_cache(all_jobs)
 
     # ── Deliver ───────────────────────────────────────────────────────────────
     if dry_run:
         _print_dry_run(all_jobs, cfg, hours_window)
     else:
         if send_report(all_jobs, cfg):
+            send_slack_notification(all_jobs, cfg)
+            send_sms_notification(all_jobs, cfg)
             mark_seen(all_jobs)
             record_run()
         else:
@@ -136,11 +164,19 @@ def run_job(cfg: dict, dry_run: bool = False) -> list[Job]:
     return all_jobs
 
 
+def run_job(cfg: dict, dry_run: bool = False) -> list[Job]:
+    """Synchronous wrapper — called by the scheduler and CLI."""
+    return asyncio.run(_run_job_async(cfg, dry_run))
+
+
 # ── Dry-run printer ───────────────────────────────────────────────────────────
 
 def _print_dry_run(jobs: list[Job], cfg: dict, hours_window: int) -> None:
     print("\n" + "=" * 70)
     print(f"DRY RUN — would email {len(jobs)} job(s) from last {hours_window}h")
+    geo_count = sum(1 for j in jobs if j.geo_priority)
+    if geo_count:
+        print(f"           ({geo_count} NJ/CT/NYC geo-priority jobs at top)")
     print("=" * 70)
 
     by_title: dict[str, list[Job]] = defaultdict(list)
@@ -151,17 +187,24 @@ def _print_dry_run(jobs: list[Job], cfg: dict, hours_window: int) -> None:
         title_jobs = by_title.get(title, [])
         print(f"\n{title.upper()} ({len(title_jobs)} results)")
         print("─" * 50)
-        for job in title_jobs[:5]:
+        for job in title_jobs[:8]:
+            geo_flag = " 📍" if job.geo_priority else ""
             posted_str = ""
             if job.posted:
                 p = job.posted if job.posted.tzinfo else job.posted.replace(tzinfo=timezone.utc)
                 hours = int((datetime.now(timezone.utc) - p).total_seconds() / 3600)
                 posted_str = f" [{hours}h ago]"
-            print(f"  • {job.title} @ {job.company} ({job.source}){posted_str}")
+            sal = ""
+            if job.salary_text:
+                sal = f" | {job.salary_text}"
+            score = f" | AI:{job.ai_score:.1f}" if job.ai_score is not None else ""
+            print(f"  • {job.title} @ {job.company} ({job.source}){geo_flag}{posted_str}{sal}{score}")
+            if job.ai_summary:
+                print(f"    → {job.ai_summary}")
             if job.url:
                 print(f"    {job.url}")
-        if len(title_jobs) > 5:
-            print(f"  ... and {len(title_jobs) - 5} more")
+        if len(title_jobs) > 8:
+            print(f"  ... and {len(title_jobs) - 8} more")
 
     print("\n" + "=" * 70 + "\n")
 
@@ -169,7 +212,6 @@ def _print_dry_run(jobs: list[Job], cfg: dict, hours_window: int) -> None:
 # ── Scheduler ─────────────────────────────────────────────────────────────────
 
 def start_scheduler(cfg: dict) -> None:
-    """Block forever, running run_job on the configured schedule."""
     email_cfg = cfg.get("email", {})
     sched = email_cfg.get("schedule", "daily")
     daily_time = email_cfg.get("daily_time", "08:00")
@@ -206,24 +248,27 @@ def start_scheduler(cfg: dict) -> None:
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
-        description="JobHelp Version 2 — Tech leadership job digest",
+        description="JobHelp Version 3 — Tech leadership job digest",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python main.py              Run once then stay scheduled (daemon mode)
-  python main.py --now        Scrape and email right now, then exit
-  python main.py --dry-run    Scrape and print results, do NOT email
-  python main.py --config /path/to/other.yaml   Use a custom config file
+  python main.py                  Run once then stay scheduled (daemon mode)
+  python main.py --now            Scrape and email right now, then exit
+  python main.py --dry-run        Scrape and print results, do NOT email
+  python main.py --dashboard      Open the web dashboard (http://localhost:5000)
+  python main.py --config /path/to/other.yaml
 """,
     )
-    p.add_argument("--now", action="store_true",
-                   help="Run once immediately and exit.")
+    p.add_argument("--now", action="store_true", help="Run once immediately and exit.")
     p.add_argument("--dry-run", action="store_true",
                    help="Scrape but print results instead of emailing.")
-    p.add_argument("--config", default=None,
-                   help="Path to an alternative config YAML file.")
+    p.add_argument("--config", default=None, help="Path to an alternative config YAML file.")
     p.add_argument("--list-boards", action="store_true",
                    help="List all supported job boards and exit.")
+    p.add_argument("--dashboard", action="store_true",
+                   help="Launch the web dashboard (http://localhost:5000).")
+    p.add_argument("--dashboard-port", type=int, default=5000,
+                   help="Port for the web dashboard (default: 5000).")
     return p.parse_args()
 
 
@@ -242,6 +287,11 @@ def main() -> None:
         print()
         sys.exit(0)
 
+    if args.dashboard:
+        from dashboard import run_dashboard
+        run_dashboard(port=args.dashboard_port)
+        return
+
     try:
         cfg = load_config()
     except FileNotFoundError:
@@ -251,7 +301,7 @@ def main() -> None:
         logger.error("Invalid config.yaml: %s", exc)
         sys.exit(1)
 
-    logger.info("Loaded config: %s", cfg.get("version", "JobHelp v2"))
+    logger.info("JobHelp v3 — %s", cfg.get("version", "JobHelp Version 3"))
 
     if args.now:
         run_job(cfg, dry_run=args.dry_run)

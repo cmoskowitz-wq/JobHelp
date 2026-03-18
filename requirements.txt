@@ -1,12 +1,28 @@
-# JobHelp Version 2 — Python dependencies
+# JobHelp Version 3 — Python dependencies
 # Install with:
 #   pip install -r requirements.txt
 #   playwright install chromium
 
+# ── Core scraping ─────────────────────────────────────────────
 requests>=2.31.0
 beautifulsoup4>=4.12.3
 lxml>=5.2.0
+playwright>=1.43.0
+
+# ── Config / scheduling ───────────────────────────────────────
 schedule>=1.2.2
 pyyaml>=6.0.1
 python-dotenv>=1.0.1
-playwright>=1.43.0
+
+# ── v3: AI scoring ────────────────────────────────────────────
+anthropic>=0.25.0
+
+# ── v3: Web dashboard ─────────────────────────────────────────
+flask>=3.0.0
+
+# ── v3: Fuzzy deduplication ───────────────────────────────────
+rapidfuzz>=3.6.0
+
+# ── v3: SMS notifications (optional) ─────────────────────────
+# Uncomment if you want SMS via Twilio:
+# twilio>=8.0.0

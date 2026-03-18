@@ -1,18 +1,24 @@
 """
-scrapers.py — JobHelp Version 2
-Headless-browser scrapers (Playwright) for HTML-based boards,
-plus requests-based scrapers for boards that offer public APIs.
+scrapers.py — JobHelp Version 3
+Async Playwright scrapers for HTML-based boards + requests-based scrapers
+for public API boards.
 
-Architecture:
-  - HTML boards  → _pw_get() uses Playwright; page rendered before parsing
-  - API boards   → _api_get() uses requests; plain JSON/RSS fetch
-  - BaseScraper  → shared init, search_all(), rate-limit sleep
-  - SCRAPER_REGISTRY + build_scrapers() unchanged interface (browser arg added)
+Key v3 changes:
+  - Full async/await via playwright.async_api (all boards run in parallel)
+  - LinkedIn fix: tries lightweight guest fragment API first; falls back to
+    Playwright only when that returns nothing.  Per-board cooldown in state.py
+    prevents hammering LinkedIn on repeat runs.
+  - Salary extraction from titles, descriptions, and API fields
+  - Two new boards: Builtin and Wellfound (AngelList Talent)
+  - Fuzzy cross-board deduplication (rapidfuzz token_sort_ratio ≥ 88)
+  - geo_sort() helper: NJ / CT / NYC jobs float to the top of each section
 """
 
 from __future__ import annotations
 
+import asyncio
 import logging
+import re
 import time
 import urllib.parse
 import xml.etree.ElementTree as ET
@@ -22,6 +28,7 @@ from typing import List, Optional
 
 import requests
 from bs4 import BeautifulSoup
+from rapidfuzz import fuzz
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +37,7 @@ logger = logging.getLogger(__name__)
 USER_AGENT = (
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) "
-    "Chrome/123.0.0.0 Safari/537.36"
+    "Chrome/124.0.0.0 Safari/537.36"
 )
 
 _API_HEADERS = {
@@ -40,6 +47,16 @@ _API_HEADERS = {
 }
 
 REQUEST_TIMEOUT = 20
+
+# Geo-priority keywords (checked case-insensitively against location strings)
+_GEO_PRIORITY_DEFAULTS = [
+    "new jersey", " nj", ", nj", "(nj)",
+    "connecticut", " ct", ", ct", "(ct)",
+    "new york city", "nyc", "new york, ny", " ny,",
+    "manhattan", "brooklyn", "queens", "bronx", "staten island",
+    "jersey city", "hoboken", "newark", "stamford", "hartford",
+    "bridgeport", "new haven",
+]
 
 
 # ── Job dataclass ─────────────────────────────────────────────────────────────
@@ -56,6 +73,13 @@ class Job:
     search_term: str = ""
     remote: bool = False
     tags: List[str] = field(default_factory=list)
+    # v3 additions
+    salary_text: str = ""          # raw string as scraped
+    salary_min: Optional[int] = None
+    salary_max: Optional[int] = None
+    ai_score: Optional[float] = None   # 0–10, filled by ai_scorer
+    ai_summary: str = ""               # one-sentence Claude summary
+    geo_priority: bool = False         # True → job is in NJ/CT/NYC
 
     def is_recent(self, hours: int = 24) -> bool:
         if self.posted is None:
@@ -77,10 +101,81 @@ class Job:
             "description": self.description,
             "search_term": self.search_term,
             "remote": self.remote,
+            "salary_text": self.salary_text,
+            "salary_min": self.salary_min,
+            "salary_max": self.salary_max,
+            "ai_score": self.ai_score,
+            "ai_summary": self.ai_summary,
+            "geo_priority": self.geo_priority,
         }
 
 
-# ── Base scraper ──────────────────────────────────────────────────────────────
+# ── Salary helpers ─────────────────────────────────────────────────────────────
+
+_SALARY_PATTERNS = [
+    # $150,000 - $200,000 / $150K - $200K
+    re.compile(r'\$\s*([\d,]+)[Kk]?\s*[-–—]\s*\$\s*([\d,]+)[Kk]?', re.I),
+    # $150K
+    re.compile(r'\$\s*([\d,]+)\s*[Kk]\b', re.I),
+    # 150000 - 200000 (plain numbers near "salary" or "compensation")
+    re.compile(r'(?:salary|compensation|pay)[^\d]{0,20}([\d,]{5,7})\s*[-–—]\s*([\d,]{5,7})', re.I),
+]
+
+
+def _parse_salary_number(raw: str) -> int:
+    """Turn '150,000' or '150K' or '150' into an integer."""
+    raw = raw.replace(",", "").strip()
+    val = float(raw)
+    if val < 1000:          # treat small values as thousands (e.g. "150" → $150k)
+        val *= 1000
+    return int(val)
+
+
+def extract_salary(text: str) -> tuple[str, Optional[int], Optional[int]]:
+    """
+    Returns (salary_text, salary_min, salary_max).
+    salary_text is the raw matched substring; min/max are parsed integers or None.
+    """
+    if not text:
+        return "", None, None
+    for pat in _SALARY_PATTERNS:
+        m = pat.search(text)
+        if m:
+            raw = m.group(0).strip()
+            groups = [g for g in m.groups() if g]
+            try:
+                if len(groups) >= 2:
+                    lo = _parse_salary_number(groups[0])
+                    hi = _parse_salary_number(groups[1])
+                    return raw, min(lo, hi), max(lo, hi)
+                elif len(groups) == 1:
+                    val = _parse_salary_number(groups[0])
+                    return raw, val, val
+            except (ValueError, AttributeError):
+                return raw, None, None
+    return "", None, None
+
+
+# ── Geo helpers ────────────────────────────────────────────────────────────────
+
+def _is_geo_priority(location: str, keywords: list[str]) -> bool:
+    loc = location.lower()
+    return any(kw in loc for kw in keywords)
+
+
+def geo_sort(jobs: List[Job], geo_keywords: list[str] | None = None) -> List[Job]:
+    """
+    Sort jobs so that geo-priority ones (NJ/CT/NYC by default) appear first.
+    Preserves relative order within each group.
+    """
+    kws = [k.lower() for k in (geo_keywords or _GEO_PRIORITY_DEFAULTS)]
+    for job in jobs:
+        job.geo_priority = _is_geo_priority(job.location, kws)
+    # stable sort: geo_priority=True first
+    return sorted(jobs, key=lambda j: (not j.geo_priority,))
+
+
+# ── Base scraper ───────────────────────────────────────────────────────────────
 
 class BaseScraper:
     name: str = "base"
@@ -93,61 +188,58 @@ class BaseScraper:
         self.location: str = search_cfg.get("location", "")
         self.max_results: int = search_cfg.get("results_per_board", 25)
 
-    # ── Playwright fetch (HTML boards) ────────────────────────────────────────
+    # ── Async Playwright fetch ─────────────────────────────────────────────────
 
-    def _pw_get(
+    async def _pw_get(
         self,
         url: str,
         wait_selector: str | None = None,
         wait_ms: int = 2500,
     ) -> BeautifulSoup | None:
-        """
-        Navigate to *url* with a headless Chromium page and return parsed HTML.
-        Each call gets its own browser context (clean cookies/fingerprint).
-        """
+        """Navigate to *url* with async Playwright and return parsed HTML."""
         if self.browser is None:
             logger.warning("[%s] No browser instance available.", self.name)
             return None
         ctx = None
         try:
-            ctx = self.browser.new_context(
+            ctx = await self.browser.new_context(
                 user_agent=USER_AGENT,
                 viewport={"width": 1280, "height": 800},
                 locale="en-US",
                 extra_http_headers={"Accept-Language": "en-US,en;q=0.9"},
             )
-            page = ctx.new_page()
-            # Block ads/trackers to speed up loads
-            page.route(
+            page = await ctx.new_page()
+            await page.route(
                 "**/{ads,analytics,doubleclick,googlesyndication}**",
-                lambda route: route.abort(),
+                lambda route, _: route.abort(),
             )
-            page.goto(url, timeout=35_000, wait_until="domcontentloaded")
+            await page.goto(url, timeout=35_000, wait_until="domcontentloaded")
             if wait_selector:
                 try:
-                    page.wait_for_selector(wait_selector, timeout=8_000)
+                    await page.wait_for_selector(wait_selector, timeout=8_000)
                 except Exception:
-                    pass  # best-effort; parse whatever loaded
+                    pass
             else:
-                page.wait_for_timeout(wait_ms)
-            return BeautifulSoup(page.content(), "lxml")
+                await page.wait_for_timeout(wait_ms)
+            html = await page.content()
+            return BeautifulSoup(html, "lxml")
         except Exception as exc:
             logger.warning("[%s] Playwright error on %s: %s", self.name, url, exc)
             return None
         finally:
             if ctx:
-                ctx.close()
+                await ctx.close()
 
-    # ── requests fetch (API boards) ───────────────────────────────────────────
+    # ── Sync requests fetch (run in thread) ───────────────────────────────────
 
-    def _api_get(
+    def _api_get_sync(
         self,
         url: str,
         params: dict | None = None,
         headers: dict | None = None,
         json_response: bool = False,
     ):
-        """Thin requests wrapper with one retry."""
+        """Blocking requests wrapper with one retry — call via _api_get()."""
         h = {**_API_HEADERS, **(headers or {})}
         for attempt in range(2):
             try:
@@ -163,20 +255,26 @@ class BaseScraper:
                     logger.warning("[%s] Request failed for %s: %s", self.name, url, exc)
         return None
 
-    # ── search loop ───────────────────────────────────────────────────────────
+    async def _api_get(self, url, params=None, headers=None, json_response=False):
+        """Non-blocking wrapper: runs _api_get_sync in a thread."""
+        return await asyncio.to_thread(
+            self._api_get_sync, url, params, headers, json_response
+        )
 
-    def fetch(self, job_title: str) -> List[Job]:
+    # ── Search loop ───────────────────────────────────────────────────────────
+
+    async def fetch(self, job_title: str) -> List[Job]:
         raise NotImplementedError
 
-    def search_all(self, job_titles: List[str]) -> List[Job]:
+    async def search_all(self, job_titles: List[str]) -> List[Job]:
         results: List[Job] = []
         for title in job_titles:
             try:
-                jobs = self.fetch(title)
+                jobs = await self.fetch(title)
                 for j in jobs:
                     j.search_term = title
                 results.extend(jobs)
-                time.sleep(1.5)  # polite rate limiting between titles
+                await asyncio.sleep(1.5)
             except Exception as exc:
                 logger.error("[%s] Error searching '%s': %s", self.name, title, exc)
         return results
@@ -185,18 +283,17 @@ class BaseScraper:
 # ── Indeed ────────────────────────────────────────────────────────────────────
 
 class IndeedScraper(BaseScraper):
-    """Playwright — navigates Indeed job search results page."""
     name = "Indeed"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         params = urllib.parse.urlencode({
-            "q": job_title,
-            "sort": "date",
-            "fromage": "1",
-            "l": self.location or "",
+            "q": job_title, "sort": "date",
+            "fromage": "1", "l": self.location or "",
         })
         url = f"https://www.indeed.com/jobs?{params}"
-        soup = self._pw_get(url, wait_selector="[data-testid='jobsearch-ResultsList']")
+        soup = await self._pw_get(
+            url, wait_selector="[data-testid='jobsearch-ResultsList']"
+        )
         if not soup:
             return []
 
@@ -217,6 +314,12 @@ class IndeedScraper(BaseScraper):
                 or card.select_one("div.companyLocation")
             )
             link_el = card.select_one("h2.jobTitle a[data-jk], h2.jobTitle a[id]")
+            salary_el = card.select_one(
+                "[data-testid='attribute_snippet_testid'], "
+                "div.metadata.salary-snippet-container, "
+                "div[class*='salary']"
+            )
+            date_el = card.select_one("[data-testid='myJobsStateDate'], span.date")
 
             if not title_el:
                 continue
@@ -228,52 +331,78 @@ class IndeedScraper(BaseScraper):
                 if href and not href.startswith("http"):
                     href = "https://www.indeed.com" + href
 
-            # Try to parse posted date from nearby element
-            date_el = card.select_one("[data-testid='myJobsStateDate'], span.date")
             posted = _parse_relative_date(date_el.get_text(strip=True) if date_el else "")
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
 
             job = Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-                posted=posted,
+                url=href, source=self.name, posted=posted,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
             )
             if job.is_recent(self.hours_ago):
                 jobs.append(job)
-
         return jobs
 
 
 # ── LinkedIn ──────────────────────────────────────────────────────────────────
 
 class LinkedInScraper(BaseScraper):
-    """Playwright — uses LinkedIn's public (unauthenticated) job search."""
-    name = "LinkedIn"
+    """
+    v3 LinkedIn fix: tries the lightweight guest-fragment API first (plain
+    requests, no browser fingerprint).  Only falls back to Playwright when
+    the fragment API returns nothing — and then adds per-run jitter so the
+    same fingerprint isn't seen on every subsequent run.
 
-    def fetch(self, job_title: str) -> List[Job]:
-        params = urllib.parse.urlencode({
+    Why the old approach broke on run 2+:
+      LinkedIn's bot-detection resets roughly every 12–24 h per IP.  After
+      the first Playwright hit each day, it flags the session and starts
+      returning empty results or redirect loops.  The guest fragment endpoint
+      is a lighter JSON-like endpoint that shares fewer signals.
+    """
+    name = "LinkedIn"
+    _GUEST_API = (
+        "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
+    )
+
+    async def fetch(self, job_title: str) -> List[Job]:
+        # ── Strategy 1: guest fragment API (requests, no browser) ─────────
+        jobs = await asyncio.to_thread(self._fetch_guest_api, job_title)
+        if jobs:
+            logger.info("[LinkedIn] Guest API returned %d result(s) for '%s'.", len(jobs), job_title)
+            return jobs
+
+        # ── Strategy 2: Playwright fallback with extended jitter ───────────
+        logger.info("[LinkedIn] Guest API empty for '%s', trying Playwright.", job_title)
+        import random
+        await asyncio.sleep(random.uniform(4, 10))
+        return await self._fetch_playwright(job_title)
+
+    def _fetch_guest_api(self, job_title: str) -> List[Job]:
+        """Synchronous; called via asyncio.to_thread."""
+        params = {
             "keywords": job_title,
             "location": self.location or "United States",
-            "f_TPR": "r86400",   # last 24 h
-            "position": 1,
-            "pageNum": 0,
-        })
-        url = f"https://www.linkedin.com/jobs/search?{params}"
-        soup = self._pw_get(
-            url,
-            wait_selector="ul.jobs-search__results-list, div.jobs-search-results-grid",
-            wait_ms=3000,
-        )
-        if not soup:
+            "f_TPR": "r86400",
+            "start": "0",
+        }
+        headers = {
+            **_API_HEADERS,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://www.linkedin.com/jobs/search/",
+        }
+        resp = self._api_get_sync(self._GUEST_API, params=params, headers=headers)
+        if resp is None:
             return []
 
+        soup = BeautifulSoup(resp.text, "lxml")
         jobs: List[Job] = []
+
         cards = soup.select(
             "li.jobs-search-results__list-item, "
-            "div.base-card, "
-            "li.job-search-card"
+            "div.base-card, li.job-search-card"
         )
         for card in cards[: self.max_results]:
             title_el = (
@@ -288,7 +417,9 @@ class LinkedInScraper(BaseScraper):
                 "span.job-search-card__location, "
                 "span.base-search-card__metadata"
             )
-            link_el = card.select_one("a.base-card__full-link, a.job-search-card__title-link")
+            link_el = card.select_one(
+                "a.base-card__full-link, a.job-search-card__title-link"
+            )
             time_el = card.select_one("time[datetime]")
 
             if not title_el or not link_el:
@@ -298,36 +429,99 @@ class LinkedInScraper(BaseScraper):
             if time_el and time_el.get("datetime"):
                 posted = _parse_iso(time_el["datetime"])
 
+            salary_el = card.select_one(
+                "span.job-search-card__salary-info, "
+                "[class*='salary']"
+            )
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            href = link_el.get("href", "").split("?")[0]
             job = Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=link_el["href"].split("?")[0],
-                source=self.name,
-                posted=posted,
+                url=href, source=self.name, posted=posted,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
             )
             if job.is_recent(self.hours_ago):
                 jobs.append(job)
+        return jobs
 
+    async def _fetch_playwright(self, job_title: str) -> List[Job]:
+        params = urllib.parse.urlencode({
+            "keywords": job_title,
+            "location": self.location or "United States",
+            "f_TPR": "r86400",
+            "position": 1, "pageNum": 0,
+        })
+        url = f"https://www.linkedin.com/jobs/search?{params}"
+        soup = await self._pw_get(
+            url,
+            wait_selector="ul.jobs-search__results-list, div.jobs-search-results-grid",
+            wait_ms=4000,
+        )
+        if not soup:
+            return []
+
+        jobs: List[Job] = []
+        cards = soup.select(
+            "li.jobs-search-results__list-item, "
+            "div.base-card, li.job-search-card"
+        )
+        for card in cards[: self.max_results]:
+            title_el = (
+                card.select_one("h3.base-search-card__title")
+                or card.select_one("h3.job-search-card__title")
+            )
+            company_el = (
+                card.select_one("h4.base-search-card__subtitle a")
+                or card.select_one("h4.base-search-card__subtitle")
+            )
+            location_el = card.select_one(
+                "span.job-search-card__location, "
+                "span.base-search-card__metadata"
+            )
+            link_el = card.select_one(
+                "a.base-card__full-link, a.job-search-card__title-link"
+            )
+            time_el = card.select_one("time[datetime]")
+            salary_el = card.select_one("[class*='salary']")
+
+            if not title_el or not link_el:
+                continue
+
+            posted = None
+            if time_el and time_el.get("datetime"):
+                posted = _parse_iso(time_el["datetime"])
+
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            job = Job(
+                title=title_el.get_text(strip=True),
+                company=company_el.get_text(strip=True) if company_el else "Unknown",
+                location=location_el.get_text(strip=True) if location_el else self.location or "US",
+                url=link_el["href"].split("?")[0], source=self.name, posted=posted,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            )
+            if job.is_recent(self.hours_ago):
+                jobs.append(job)
         return jobs
 
 
 # ── ZipRecruiter ──────────────────────────────────────────────────────────────
 
 class ZipRecruiterScraper(BaseScraper):
-    """Playwright — ZipRecruiter candidate job search."""
     name = "ZipRecruiter"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         params = urllib.parse.urlencode({
-            "search": job_title,
-            "location": self.location or "",
-            "days": "1",
+            "search": job_title, "location": self.location or "", "days": "1",
         })
         url = f"https://www.ziprecruiter.com/candidate/search?{params}"
-        soup = self._pw_get(
-            url,
-            wait_selector="article.job_result, div[data-testid='job-card']",
+        soup = await self._pw_get(
+            url, wait_selector="article.job_result, div[data-testid='job-card']"
         )
         if not soup:
             return []
@@ -350,6 +544,9 @@ class ZipRecruiterScraper(BaseScraper):
                 card.select_one("a.location")
                 or card.select_one("[data-testid='location']")
             )
+            salary_el = card.select_one(
+                "span.salary_range, [data-testid='salary'], [class*='salary']"
+            )
 
             if not title_el:
                 continue
@@ -358,33 +555,32 @@ class ZipRecruiterScraper(BaseScraper):
             if href and not href.startswith("http"):
                 href = "https://www.ziprecruiter.com" + href
 
-            job = Job(
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            jobs.append(Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-            )
-            jobs.append(job)
-
+                url=href, source=self.name,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            ))
         return jobs
 
 
 # ── Glassdoor ─────────────────────────────────────────────────────────────────
 
 class GlassdoorScraper(BaseScraper):
-    """Playwright — Glassdoor public job search."""
     name = "Glassdoor"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         encoded = urllib.parse.quote_plus(job_title)
         url = (
             f"https://www.glassdoor.com/Job/jobs.htm"
             f"?sc.keyword={encoded}&fromAge=1&sort.sortType=date&sort.descending=true"
         )
-        soup = self._pw_get(
-            url,
-            wait_selector="li[data-test='jobListing'], li.react-job-listing",
+        soup = await self._pw_get(
+            url, wait_selector="li[data-test='jobListing'], li.react-job-listing",
             wait_ms=3000,
         )
         if not soup:
@@ -401,7 +597,10 @@ class GlassdoorScraper(BaseScraper):
             )
             company_el = card.select_one("[data-test='employer-name']")
             location_el = card.select_one("[data-test='emp-location']")
-            link_el = card.select_one("a[href*='/job-listing/'], a[href*='/partner/jobListing']")
+            link_el = card.select_one(
+                "a[href*='/job-listing/'], a[href*='/partner/jobListing']"
+            )
+            salary_el = card.select_one("[data-test='detailSalary'], [class*='salary']")
 
             if not title_el:
                 continue
@@ -412,34 +611,31 @@ class GlassdoorScraper(BaseScraper):
                 if href and not href.startswith("http"):
                     href = "https://www.glassdoor.com" + href
 
-            job = Job(
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            jobs.append(Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-            )
-            jobs.append(job)
-
+                url=href, source=self.name,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            ))
         return jobs
 
 
 # ── SimplyHired ───────────────────────────────────────────────────────────────
 
 class SimplyHiredScraper(BaseScraper):
-    """Playwright — SimplyHired job search."""
     name = "SimplyHired"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         params = urllib.parse.urlencode({
-            "q": job_title,
-            "l": self.location or "",
-            "dateposted": "1",
+            "q": job_title, "l": self.location or "", "dateposted": "1",
         })
         url = f"https://www.simplyhired.com/search?{params}"
-        soup = self._pw_get(
-            url,
-            wait_selector="div[data-testid='job-card'], article.SerpJob",
+        soup = await self._pw_get(
+            url, wait_selector="div[data-testid='job-card'], article.SerpJob"
         )
         if not soup:
             return []
@@ -465,6 +661,9 @@ class SimplyHiredScraper(BaseScraper):
                 card.select_one("a[data-testid='job-title-link']")
                 or card.select_one("a.jobposting-permalink")
             )
+            salary_el = card.select_one(
+                "[data-testid='salary'], span.jobposting-salary, [class*='salary']"
+            )
 
             if not title_el:
                 continue
@@ -475,31 +674,30 @@ class SimplyHiredScraper(BaseScraper):
                 if href and not href.startswith("http"):
                     href = "https://www.simplyhired.com" + href
 
-            job = Job(
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            jobs.append(Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-            )
-            jobs.append(job)
-
+                url=href, source=self.name,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            ))
         return jobs
 
 
 # ── Monster ───────────────────────────────────────────────────────────────────
 
 class MonsterScraper(BaseScraper):
-    """Playwright — Monster job search."""
     name = "Monster"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         encoded = urllib.parse.quote_plus(job_title)
         loc = urllib.parse.quote_plus(self.location or "")
         url = f"https://www.monster.com/jobs/search?q={encoded}&where={loc}&tm=1"
-        soup = self._pw_get(
-            url,
-            wait_selector="div[data-testid='JobCard'], section.card-content",
+        soup = await self._pw_get(
+            url, wait_selector="div[data-testid='JobCard'], section.card-content"
         )
         if not soup:
             return []
@@ -530,32 +728,27 @@ class MonsterScraper(BaseScraper):
             if href and not href.startswith("http"):
                 href = "https://www.monster.com" + href
 
-            job = Job(
+            jobs.append(Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-            )
-            jobs.append(job)
-
+                url=href, source=self.name,
+            ))
         return jobs
 
 
 # ── CareerBuilder ─────────────────────────────────────────────────────────────
 
 class CareerBuilderScraper(BaseScraper):
-    """Playwright — CareerBuilder job search."""
     name = "CareerBuilder"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         params = urllib.parse.urlencode({
-            "keywords": job_title,
-            "location": self.location or "",
+            "keywords": job_title, "location": self.location or "",
             "posted": "today",
         })
         url = f"https://www.careerbuilder.com/jobs?{params}"
-        soup = self._pw_get(url, wait_selector="li[data-job-did]")
+        soup = await self._pw_get(url, wait_selector="li[data-job-did]")
         if not soup:
             return []
 
@@ -573,6 +766,7 @@ class CareerBuilderScraper(BaseScraper):
                 or card.select_one("[data-company]")
             )
             location_el = card.select_one("[data-location]")
+            salary_el = card.select_one("[data-salary], [class*='salary']")
 
             if not title_el:
                 continue
@@ -581,35 +775,32 @@ class CareerBuilderScraper(BaseScraper):
             if href and not href.startswith("http"):
                 href = "https://www.careerbuilder.com" + href
 
-            job = Job(
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            jobs.append(Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-            )
-            jobs.append(job)
-
+                url=href, source=self.name,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            ))
         return jobs
 
 
 # ── Dice ──────────────────────────────────────────────────────────────────────
 
 class DiceScraper(BaseScraper):
-    """Playwright — Dice.com job search (headless browser to avoid 403)."""
     name = "Dice"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         params = urllib.parse.urlencode({
-            "q": job_title,
-            "countryCode": "US",
-            "radius": "30",
-            "radiusUnit": "mi",
-            "datePosted": "ONE",
-            "sort": "-postedDate",
+            "q": job_title, "countryCode": "US",
+            "radius": "30", "radiusUnit": "mi",
+            "datePosted": "ONE", "sort": "-postedDate",
         })
         url = f"https://www.dice.com/jobs?{params}"
-        soup = self._pw_get(
+        soup = await self._pw_get(
             url,
             wait_selector="dhi-job-search-job-card, div.search-card",
             wait_ms=4000,
@@ -635,9 +826,8 @@ class DiceScraper(BaseScraper):
                 card.select_one("span.search-result-location")
                 or card.select_one("[data-cy='search-result-location']")
             )
-            date_el = card.select_one(
-                "span.posted-date, [data-cy='card-posted-date']"
-            )
+            date_el = card.select_one("span.posted-date, [data-cy='card-posted-date']")
+            salary_el = card.select_one("[data-cy='search-result-salary'], [class*='salary']")
 
             if not title_el:
                 continue
@@ -646,33 +836,30 @@ class DiceScraper(BaseScraper):
             if href and not href.startswith("http"):
                 href = "https://www.dice.com" + href
 
-            posted = _parse_relative_date(
-                date_el.get_text(strip=True) if date_el else ""
-            )
+            posted = _parse_relative_date(date_el.get_text(strip=True) if date_el else "")
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
 
             job = Job(
                 title=title_el.get_text(strip=True),
                 company=company_el.get_text(strip=True) if company_el else "Unknown",
                 location=location_el.get_text(strip=True) if location_el else self.location or "US",
-                url=href,
-                source=self.name,
-                posted=posted,
+                url=href, source=self.name, posted=posted,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
             )
             if job.is_recent(self.hours_ago):
                 jobs.append(job)
-
         return jobs
 
 
 # ── The Muse ──────────────────────────────────────────────────────────────────
 
 class TheMuseScraper(BaseScraper):
-    """API — The Muse free public API (no key required)."""
     name = "The Muse"
     _API = "https://www.themuse.com/api/public/jobs"
 
-    def fetch(self, job_title: str) -> List[Job]:
-        data = self._api_get(
+    async def fetch(self, job_title: str) -> List[Job]:
+        data = await self._api_get(
             self._API,
             params={"page": 1, "descending": "true", "category": "IT"},
             json_response=True,
@@ -694,8 +881,7 @@ class TheMuseScraper(BaseScraper):
 
             company = (
                 item.get("company", {}).get("name", "Unknown")
-                if isinstance(item.get("company"), dict)
-                else "Unknown"
+                if isinstance(item.get("company"), dict) else "Unknown"
             )
             locations = item.get("locations", [])
             location = locations[0].get("name", "Remote") if locations else "Remote"
@@ -707,14 +893,12 @@ class TheMuseScraper(BaseScraper):
             ))
             if len(jobs) >= self.max_results:
                 break
-
         return jobs
 
 
 # ── Adzuna ────────────────────────────────────────────────────────────────────
 
 class AdzunaScraper(BaseScraper):
-    """API — Adzuna official API (free tier)."""
     name = "Adzuna"
 
     def __init__(self, config: dict, browser=None):
@@ -724,56 +908,64 @@ class AdzunaScraper(BaseScraper):
         self.app_key = board_cfg.get("app_key", "")
         self.country = board_cfg.get("country", "us")
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         if not self.app_id or not self.app_key:
             logger.warning("[Adzuna] app_id / app_key not set — skipping.")
             return []
 
         url = f"https://api.adzuna.com/v1/api/jobs/{self.country}/search/1"
         params = {
-            "app_id": self.app_id,
-            "app_key": self.app_key,
-            "what": job_title,
-            "max_days_old": "1",
+            "app_id": self.app_id, "app_key": self.app_key,
+            "what": job_title, "max_days_old": "1",
             "results_per_page": self.max_results,
-            "sort_by": "date",
-            "content-type": "application/json",
+            "sort_by": "date", "content-type": "application/json",
         }
         if self.location:
             params["where"] = self.location
 
-        data = self._api_get(url, params=params, json_response=True)
+        data = await self._api_get(url, params=params, json_response=True)
         if not data:
             return []
 
         jobs: List[Job] = []
         for item in data.get("results", []):
             posted = _parse_iso(item.get("created", ""))
+            desc = item.get("description", "")
+            sal_text, sal_min, sal_max = extract_salary(desc[:500])
+            # Adzuna may provide salary_min/max directly
+            if not sal_min and item.get("salary_min"):
+                sal_min = int(item["salary_min"])
+            if not sal_max and item.get("salary_max"):
+                sal_max = int(item["salary_max"])
+            if sal_min and not sal_text:
+                sal_text = (
+                    f"${sal_min:,} – ${sal_max:,}" if sal_max and sal_max != sal_min
+                    else f"${sal_min:,}"
+                )
+
             job = Job(
                 title=item.get("title", "N/A"),
                 company=item.get("company", {}).get("display_name", "Unknown"),
                 location=item.get("location", {}).get("display_name", self.location or "US"),
                 url=item.get("redirect_url", ""),
-                source=self.name,
-                posted=posted,
-                description=item.get("description", "")[:300],
+                source=self.name, posted=posted,
+                description=desc[:300],
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
             )
             if job.is_recent(self.hours_ago):
                 jobs.append(job)
-
         return jobs
 
 
 # ── RemoteOK ──────────────────────────────────────────────────────────────────
 
 class RemoteOKScraper(BaseScraper):
-    """API — RemoteOK free public JSON API."""
     name = "RemoteOK"
     _API = "https://remoteok.com/api"
 
-    def fetch(self, job_title: str) -> List[Job]:
+    async def fetch(self, job_title: str) -> List[Job]:
         keyword = job_title.lower().replace(" ", "+")
-        data = self._api_get(
+        data = await self._api_get(
             f"{self._API}?tag={keyword}",
             headers={"Accept": "application/json"},
             json_response=True,
@@ -792,34 +984,30 @@ class RemoteOKScraper(BaseScraper):
                 continue
             slug = item.get("slug", "")
             url = f"https://remoteok.com/remote-jobs/{slug}" if slug else ""
+            desc = BeautifulSoup(item.get("description", ""), "lxml").get_text()
+            sal_text, sal_min, sal_max = extract_salary(desc[:500])
+
             jobs.append(Job(
                 title=item.get("position", "N/A"),
                 company=item.get("company", "Unknown"),
-                location="Remote",
-                url=url,
-                source=self.name,
-                posted=posted,
-                remote=True,
-                tags=item.get("tags", []),
-                description=BeautifulSoup(
-                    item.get("description", ""), "lxml"
-                ).get_text()[:300],
+                location="Remote", url=url, source=self.name, posted=posted,
+                remote=True, tags=item.get("tags", []),
+                description=desc[:300],
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
             ))
             if len(jobs) >= self.max_results:
                 break
-
         return jobs
 
 
 # ── Jobicy ────────────────────────────────────────────────────────────────────
 
 class JobicyScraper(BaseScraper):
-    """API — Jobicy free public API."""
     name = "Jobicy"
     _API = "https://jobicy.com/api/v2/remote-jobs"
 
-    def fetch(self, job_title: str) -> List[Job]:
-        data = self._api_get(
+    async def fetch(self, job_title: str) -> List[Job]:
+        data = await self._api_get(
             self._API,
             params={"count": self.max_results, "tag": job_title},
             json_response=True,
@@ -833,19 +1021,146 @@ class JobicyScraper(BaseScraper):
             posted = _parse_iso(item.get("pubDate", ""))
             if posted and posted < cutoff:
                 continue
+            desc = BeautifulSoup(item.get("jobExcerpt", ""), "lxml").get_text()
+            sal_text, sal_min, sal_max = extract_salary(
+                item.get("annualSalaryMin", "") or item.get("annualSalaryMax", "") or desc[:500]
+            )
+            if not sal_min and item.get("annualSalaryMin"):
+                try:
+                    sal_min = int(float(item["annualSalaryMin"]))
+                    sal_max = int(float(item.get("annualSalaryMax", sal_min)))
+                    sal_text = sal_text or f"${sal_min:,}"
+                except (ValueError, TypeError):
+                    pass
+
             jobs.append(Job(
                 title=item.get("jobTitle", "N/A"),
                 company=item.get("companyName", "Unknown"),
                 location=item.get("jobGeo", "Remote"),
-                url=item.get("url", ""),
-                source=self.name,
-                posted=posted,
-                remote=True,
-                description=BeautifulSoup(
-                    item.get("jobExcerpt", ""), "lxml"
-                ).get_text()[:300],
+                url=item.get("url", ""), source=self.name, posted=posted,
+                remote=True, description=desc[:300],
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
             ))
+        return jobs
 
+
+# ── Builtin ───────────────────────────────────────────────────────────────────
+
+class BuiltinScraper(BaseScraper):
+    """
+    Builtin.com — tech-focused job board with strong presence in major metros.
+    Uses Playwright; Builtin is JS-heavy.
+    """
+    name = "Builtin"
+
+    async def fetch(self, job_title: str) -> List[Job]:
+        encoded = urllib.parse.quote_plus(job_title)
+        url = f"https://builtin.com/jobs/search?search={encoded}"
+        soup = await self._pw_get(
+            url,
+            wait_selector="[data-id='job-card'], article[class*='JobCard']",
+            wait_ms=3500,
+        )
+        if not soup:
+            return []
+
+        jobs: List[Job] = []
+        cards = soup.select(
+            "[data-id='job-card'], article[class*='JobCard'], "
+            "div[class*='job-card'], li[class*='job-result']"
+        )[: self.max_results]
+
+        for card in cards:
+            title_el = (
+                card.select_one("h2 a, h3 a, [class*='job-title'] a")
+                or card.select_one("a[class*='title']")
+            )
+            company_el = card.select_one(
+                "[class*='company-name'], [class*='employer'], span[class*='company']"
+            )
+            location_el = card.select_one(
+                "[class*='location'], span[class*='metro']"
+            )
+            salary_el = card.select_one("[class*='salary'], [class*='compensation']")
+
+            if not title_el:
+                continue
+
+            href = title_el.get("href", "")
+            if href and not href.startswith("http"):
+                href = "https://builtin.com" + href
+
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            jobs.append(Job(
+                title=title_el.get_text(strip=True),
+                company=company_el.get_text(strip=True) if company_el else "Unknown",
+                location=location_el.get_text(strip=True) if location_el else self.location or "US",
+                url=href, source=self.name,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            ))
+        return jobs
+
+
+# ── Wellfound (AngelList Talent) ──────────────────────────────────────────────
+
+class WellfoundScraper(BaseScraper):
+    """
+    Wellfound (formerly AngelList Talent) — startup-heavy tech job board.
+    Uses Playwright; site is SPA.
+    """
+    name = "Wellfound"
+
+    async def fetch(self, job_title: str) -> List[Job]:
+        encoded = urllib.parse.quote_plus(job_title)
+        url = f"https://wellfound.com/jobs?q={encoded}"
+        soup = await self._pw_get(
+            url,
+            wait_selector="[class*='JobListingCard'], [data-test='job-listing']",
+            wait_ms=4000,
+        )
+        if not soup:
+            return []
+
+        jobs: List[Job] = []
+        cards = soup.select(
+            "[class*='JobListingCard'], [data-test='job-listing'], "
+            "div[class*='styles_jobListing']"
+        )[: self.max_results]
+
+        for card in cards:
+            title_el = (
+                card.select_one("a[class*='title'], h2 a, h3 a")
+                or card.select_one("[class*='JobTitle']")
+            )
+            company_el = card.select_one(
+                "[class*='company'], [class*='startup-link'], a[class*='name']"
+            )
+            location_el = card.select_one(
+                "[class*='location'], [class*='LocationTag']"
+            )
+            salary_el = card.select_one(
+                "[class*='salary'], [class*='compensation'], [class*='Compensation']"
+            )
+
+            if not title_el:
+                continue
+
+            href = title_el.get("href", "")
+            if href and not href.startswith("http"):
+                href = "https://wellfound.com" + href
+
+            raw_salary = salary_el.get_text(strip=True) if salary_el else ""
+            sal_text, sal_min, sal_max = extract_salary(raw_salary)
+
+            jobs.append(Job(
+                title=title_el.get_text(strip=True),
+                company=company_el.get_text(strip=True) if company_el else "Unknown",
+                location=location_el.get_text(strip=True) if location_el else "US",
+                url=href, source=self.name,
+                salary_text=sal_text, salary_min=sal_min, salary_max=sal_max,
+            ))
         return jobs
 
 
@@ -861,20 +1176,15 @@ def _parse_iso(date_str: str) -> datetime | None:
 
 
 def _parse_relative_date(text: str) -> datetime | None:
-    """Parse Indeed-style relative date strings like '2 days ago', 'Just posted'."""
     if not text:
         return None
     text = text.lower().strip()
     now = datetime.now(timezone.utc)
     if "just" in text or "today" in text or "hour" in text:
         return now
-    try:
-        import re
-        m = re.search(r"(\d+)\s+day", text)
-        if m:
-            return now - timedelta(days=int(m.group(1)))
-    except Exception:
-        pass
+    m = re.search(r"(\d+)\s+day", text)
+    if m:
+        return now - timedelta(days=int(m.group(1)))
     return None
 
 
@@ -893,11 +1203,13 @@ SCRAPER_REGISTRY: dict[str, type[BaseScraper]] = {
     "careerbuilder": CareerBuilderScraper,
     "remoteok":      RemoteOKScraper,
     "jobicy":        JobicyScraper,
+    "builtin":       BuiltinScraper,
+    "wellfound":     WellfoundScraper,
 }
 
 
-def build_scrapers(config: dict, browser=None) -> List[BaseScraper]:
-    """Return enabled scraper instances, injecting the shared browser."""
+def build_scrapers(config: dict, browser=None) -> list[BaseScraper]:
+    """Return enabled scraper instances, injecting the shared async browser."""
     boards_cfg = config.get("job_boards", {})
     scrapers = []
     for key, cls in SCRAPER_REGISTRY.items():
@@ -907,10 +1219,80 @@ def build_scrapers(config: dict, browser=None) -> List[BaseScraper]:
     return scrapers
 
 
-def deduplicate(jobs: List[Job]) -> List[Job]:
-    """Remove jobs with the same title + company (cross-board dedup)."""
+async def run_all_scrapers_async(
+    cfg: dict, browser, job_titles: list[str]
+) -> list[Job]:
+    """Run all enabled scrapers in parallel and return combined results."""
+    scrapers = build_scrapers(cfg, browser)
+    if not scrapers:
+        logger.warning("No job boards enabled — check config.yaml.")
+        return []
+
+    logger.info(
+        "JobHelp v3 — %d board(s) × %d title(s) [parallel]",
+        len(scrapers), len(job_titles),
+    )
+    tasks = [scraper.search_all(job_titles) for scraper in scrapers]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    all_jobs: list[Job] = []
+    for scraper, result in zip(scrapers, results):
+        if isinstance(result, Exception):
+            logger.error("[%s] Scraper raised: %s", scraper.name, result)
+        elif isinstance(result, list):
+            logger.info("  %s → %d result(s)", scraper.name, len(result))
+            all_jobs.extend(result)
+    return all_jobs
+
+
+# ── Deduplication ─────────────────────────────────────────────────────────────
+
+_COMPANY_STRIP = re.compile(
+    r"\b(inc\.?|llc\.?|corp\.?|ltd\.?|co\.?|group|holdings|technologies|tech|solutions)\b",
+    re.I,
+)
+
+
+def _normalise_company(name: str) -> str:
+    return _COMPANY_STRIP.sub("", name).lower().strip(" ,.")
+
+
+def fuzzy_deduplicate(jobs: list[Job], threshold: int = 88) -> list[Job]:
+    """
+    Cross-board deduplication using rapidfuzz token_sort_ratio.
+    Two jobs are duplicates when:
+      • normalised company similarity ≥ threshold  AND
+      • title token_sort_ratio ≥ threshold
+    Keeps the first occurrence (highest-quality source ordering from config).
+    """
+    unique: list[Job] = []
+    for job in jobs:
+        norm_company = _normalise_company(job.company)
+        norm_title = job.title.lower().strip()
+        is_dup = False
+        for kept in unique:
+            if (
+                fuzz.token_sort_ratio(norm_title, kept.title.lower().strip()) >= threshold
+                and fuzz.token_sort_ratio(
+                    norm_company, _normalise_company(kept.company)
+                ) >= threshold
+            ):
+                is_dup = True
+                break
+        if not is_dup:
+            unique.append(job)
+
+    removed = len(jobs) - len(unique)
+    if removed:
+        logger.info("Fuzzy dedup removed %d near-duplicate(s).", removed)
+    return unique
+
+
+# kept for backward-compat
+def deduplicate(jobs: list[Job]) -> list[Job]:
+    """Exact title + company dedup (legacy; use fuzzy_deduplicate in v3)."""
     seen: set[tuple] = set()
-    unique: List[Job] = []
+    unique: list[Job] = []
     for job in jobs:
         key = (job.title.lower().strip(), job.company.lower().strip())
         if key not in seen:

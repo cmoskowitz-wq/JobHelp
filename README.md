@@ -1,25 +1,47 @@
-# JobHelp Version 1
+# JobHelp Version 3
 
-A configurable job board scraper that searches for tech leadership roles posted in the last 24 hours and emails you a digest with clickable links to every posting.
+A configurable job board scraper that searches for tech leadership roles, emails
+a rich HTML digest, scores jobs with Claude AI, and provides a local web
+dashboard for tracking applications.
 
 ---
 
-## Supported Job Boards
+## What's New in v3
 
-| Board | Method | Auth Required |
-|-------|--------|--------------|
-| Indeed | RSS feed | None |
-| LinkedIn | Public guest API | None |
-| Dice | Internal search API | None |
+| Feature | Details |
+|---------|---------|
+| **Parallel scraping** | All boards run simultaneously via async Playwright — 3–5× faster |
+| **LinkedIn fix** | Tries a lightweight guest API first; Playwright only as fallback with jitter — fixes "only works on first morning run" |
+| **Salary display** | Extracted from titles, descriptions, and API responses; shown in email + dashboard |
+| **Geo-priority** | NJ, CT, and NYC jobs float to the top of every section with a gold border |
+| **AI scoring** | Claude scores each job 0–10 against your profile + writes a one-line match summary |
+| **Fuzzy dedup** | rapidfuzz catches near-duplicate listings across boards (e.g. "VP Technology" ≈ "VP of Technology") |
+| **Slack notifications** | Instant Slack message with top N jobs after each run |
+| **SMS notifications** | Brief Twilio SMS with job count + top listings |
+| **Web dashboard** | Browse jobs, filter by board/salary/score/geo, mark as Interested / Applied / Pass |
+| **Application tracker** | SQLite-backed tracker with status, notes, and history |
+| **New boards** | Builtin.com (tech-focused, strong NYC/NJ) and Wellfound (startup roles) |
+
+---
+
+## Supported Job Boards (14 total)
+
+| Board | Method | Auth |
+|-------|--------|------|
+| Indeed | Playwright | None |
+| LinkedIn | Guest API → Playwright fallback | None |
+| Dice | Playwright | None |
+| ZipRecruiter | Playwright | None |
+| Glassdoor | Playwright | None |
+| SimplyHired | Playwright | None |
+| Monster | Playwright | None |
+| CareerBuilder | Playwright | None |
+| **Builtin** *(new)* | Playwright | None |
+| **Wellfound** *(new)* | Playwright | None |
 | The Muse | Public API | None |
-| RemoteOK | Public JSON API | None |
+| RemoteOK | Public API | None |
 | Jobicy | Public API | None |
-| ZipRecruiter | Web scraping | None |
-| Glassdoor | Web scraping | None |
-| SimplyHired | Web scraping | None |
-| Monster | Web scraping | None |
-| CareerBuilder | Web scraping | None |
-| **Adzuna** | Official API | **Free key** (optional) |
+| **Adzuna** | Official API | Free key (optional) |
 
 ---
 
@@ -29,100 +51,123 @@ A configurable job board scraper that searches for tech leadership roles posted 
 
 ```bash
 pip install -r requirements.txt
+playwright install chromium
 ```
 
 ### 2. Configure credentials
 
-Copy the example env file and fill it in:
-
 ```bash
-cp .env.example .env
+cp .env.example .env   # if .env.example exists, otherwise create .env manually
 ```
 
 Edit `.env`:
 
 ```
 EMAIL_SENDER=you@gmail.com
-EMAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx   # Gmail App Password — see below
+EMAIL_PASSWORD=xxxx-xxxx-xxxx-xxxx   # Gmail App Password
+ANTHROPIC_API_KEY=sk-ant-...          # optional — enables AI scoring
+SLACK_WEBHOOK_URL=https://hooks.slack.com/...   # optional
 ```
 
-> **Gmail App Password**: Your regular Gmail password will NOT work.
-> You must create an App Password at:
-> https://myaccount.google.com/apppasswords
-> (requires 2-Step Verification to be enabled on your account)
+> **Gmail App Password**: Create one at https://myaccount.google.com/apppasswords
+> (requires 2-Step Verification)
 
-### 3. (Optional) Enable Adzuna
+### 3. Run
 
-Register for a free API key at https://developer.adzuna.com/, then add to `.env`:
+```bash
+# Scrape all boards, email digest, then stay scheduled
+python main.py
 
+# One-shot run and exit
+python main.py --now
+
+# Dry run (print results, no email)
+python main.py --dry-run
+
+# Open web dashboard (http://localhost:5000)
+python main.py --dashboard
 ```
-ADZUNA_APP_ID=your_app_id
-ADZUNA_APP_KEY=your_app_key
-```
-
-Then in `config.yaml` set `job_boards.adzuna.enabled: true`.
-
----
-
-## Usage
-
-| Command | What it does |
-|---------|-------------|
-| `python main.py` | Run once immediately, then keep running on the configured schedule |
-| `python main.py --now` | Scrape all boards and send the email right now, then exit |
-| `python main.py --dry-run` | Scrape all boards and print results to terminal, no email sent |
-| `python main.py --list-boards` | Print all supported boards and exit |
-| `python main.py --config other.yaml` | Use a different config file |
 
 ---
 
 ## Configuration (`config.yaml`)
 
-### Job Titles
+### Geo-Priority
 
-Add or remove titles freely:
+Jobs in NJ, CT, and NYC are sorted to the **top of every section** and highlighted
+with a gold border in the email and a 📍 badge on the dashboard. Regions are fully
+configurable:
 
 ```yaml
-job_titles:
-  - "CTO"
-  - "CIO"
-  - "VP of Technology"
-  - "Head of IT"
-  - "Head of Infrastructure"
-  - "SVP of Technology"
-  - "EUC"
-  - "Director of Technology"
+geo_priority:
+  regions:
+    - "new jersey"
+    - " nj"
+    - "connecticut"
+    - "new york city"
+    - "nyc"
+    - "manhattan"
+    # add any city/state keywords here
 ```
 
-### Enable / Disable Boards
+### Salary
+
+Salary is extracted automatically from job titles, descriptions, and API responses.
+No configuration needed — it appears in the email card and dashboard whenever found.
+
+### AI Scoring
+
+Requires `ANTHROPIC_API_KEY` in your `.env`:
 
 ```yaml
-job_boards:
-  indeed:
+ai:
+  enabled: true
+  model: "claude-haiku-4-5-20251001"   # fast and cheap
+  min_score: 5                          # hide jobs scoring below 5
+  profile: |
+    Senior technology executive (CTO/CIO) with 15+ years...
+    Prefer NJ/CT/NYC. Salary target $250K+.
+```
+
+### Slack Notifications
+
+```yaml
+notifications:
+  slack:
     enabled: true
-  linkedin:
-    enabled: false   # ← flip to false to skip
+    webhook_url: "https://hooks.slack.com/services/..."
+    max_jobs: 10
 ```
 
-### Search Filters
+Or set `SLACK_WEBHOOK_URL` in your `.env` and leave `webhook_url` blank.
+
+### SMS Notifications
 
 ```yaml
-search:
-  hours_ago: 24        # only jobs posted within this window
-  location: ""         # blank = nationwide; e.g. "New York, NY"
-  remote_ok: true
-  results_per_board: 25
+notifications:
+  sms:
+    enabled: true
+    from_number: "+15551234567"
+    to_number: "+19735550001"
 ```
 
-### Email Schedule
+Set `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` in `.env`.
 
-```yaml
-email:
-  recipient: "cmoskowitz@gmail.com"
-  schedule: "daily"        # "daily", "hourly", or a custom "HH:MM"
-  daily_time: "08:00"      # used when schedule = "daily"
-  timezone: "America/New_York"
+---
+
+## Web Dashboard
+
+```bash
+python main.py --dashboard          # launches on http://localhost:5000
+python dashboard.py --port 8080    # custom port
 ```
+
+Features:
+- Browse today's jobs or pick a past date
+- Filter by board, search term, salary, AI score, geo-priority
+- Click any job title to open the original posting
+- One-click: **Interested** / **Applied** / **Interviewing** / **Offer** / **Pass**
+- **Applications tab** — full tracker with editable notes
 
 ---
 
@@ -130,16 +175,15 @@ email:
 
 ### Linux (systemd)
 
-Create `/etc/systemd/system/jobhelp.service`:
-
 ```ini
 [Unit]
-Description=JobHelp Version 1
+Description=JobHelp Version 3
 After=network.target
 
 [Service]
 User=youruser
 WorkingDirectory=/path/to/JobHelp
+EnvironmentFile=/path/to/JobHelp/.env
 ExecStart=/usr/bin/python3 /path/to/JobHelp/main.py
 Restart=on-failure
 
@@ -148,13 +192,10 @@ WantedBy=multi-user.target
 ```
 
 ```bash
-sudo systemctl enable jobhelp
-sudo systemctl start jobhelp
+sudo systemctl enable jobhelp && sudo systemctl start jobhelp
 ```
 
-### macOS (launchd) or cron
-
-Simple cron alternative — run at 8 AM daily:
+### cron (simple alternative)
 
 ```cron
 0 8 * * * cd /path/to/JobHelp && python3 main.py --now >> jobhelp.log 2>&1
@@ -166,7 +207,7 @@ Simple cron alternative — run at 8 AM daily:
 FROM python:3.12-slim
 WORKDIR /app
 COPY . .
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt && playwright install chromium --with-deps
 CMD ["python", "main.py"]
 ```
 
@@ -175,16 +216,27 @@ CMD ["python", "main.py"]
 ## Adding a New Job Board
 
 1. Open `scrapers.py`
-2. Create a class that extends `BaseScraper`
-3. Implement `fetch(self, job_title: str) -> List[Job]`
-4. Register it in `SCRAPER_REGISTRY` at the bottom of the file
+2. Create a class extending `BaseScraper`
+3. Implement `async def fetch(self, job_title: str) -> List[Job]`
+4. Register it in `SCRAPER_REGISTRY`
 5. Add an entry to `config.yaml` under `job_boards`
 
 ---
 
-## Notes on Anti-Bot Measures
+## About the LinkedIn Fix
 
-LinkedIn, Glassdoor, ZipRecruiter, and other large boards actively detect and block automated scrapers. Results from these boards may vary. The scrapers use realistic browser headers and rate limiting, but you may see fewer results from these boards over time. The API-based boards (Indeed RSS, Dice, RemoteOK, Jobicy, The Muse, Adzuna) are the most reliable.
+LinkedIn's bot detection resets roughly every 12–24 h per IP. Under the old
+approach, the full Playwright page load was fingerprinted after the first daily
+scrape, causing empty results on all subsequent runs.
+
+**v3 fix (two-stage):**
+1. Try `GET /jobs-guest/jobs/api/seeMoreJobPostings/search` — a lighter endpoint
+   that returns HTML fragments with fewer bot-detection signals. This is a plain
+   `requests` call with no browser.
+2. If that returns 0 results, fall back to Playwright with a random 4–10 s jitter
+   delay to vary the timing fingerprint.
+
+This approach reliably returns results on repeated daily runs.
 
 ---
 
@@ -192,4 +244,6 @@ LinkedIn, Glassdoor, ZipRecruiter, and other large boards actively detect and bl
 
 | Version | Date | Notes |
 |---------|------|-------|
-| 1.0 | 2026-03-15 | Initial release — 12 boards, HTML email digest, configurable schedule |
+| 1.0 | 2026-03-15 | Initial — 12 boards, HTML email, configurable schedule |
+| 2.0 | 2026-03-16 | Playwright scraping, SQLite state, smart time-window |
+| 3.0 | 2026-03-18 | Async parallel scraping, LinkedIn fix, salary, geo-priority, AI scoring, fuzzy dedup, Slack/SMS, web dashboard, application tracker, Builtin + Wellfound boards |

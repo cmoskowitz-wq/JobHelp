@@ -1,12 +1,12 @@
 # ============================================================
-#  JobHelp Version 1 — Configuration File
-#  Edit this file to customize boards, titles, and schedule.
+#  JobHelp Version 3 — Configuration File
+#  Edit this file to customize boards, titles, schedule,
+#  AI scoring, notifications, geo-priority, and dashboard.
 # ============================================================
 
-version: "JobHelp Version 2"
+version: "JobHelp Version 3"
 
 # ── Job titles to search for ────────────────────────────────
-# Add or remove titles as needed.
 job_titles:
   - "CTO"
   - "CIO"
@@ -18,18 +18,19 @@ job_titles:
   - "Director of Technology"
 
 # ── Job boards ───────────────────────────────────────────────
-# Set enabled: false to skip a board without deleting it.
 job_boards:
 
   indeed:
     enabled: true
-    # Uses Indeed's public RSS feed — no key required.
     base_url: "https://www.indeed.com"
 
   linkedin:
     enabled: true
-    # Uses LinkedIn's public guest jobs API — no key required.
     base_url: "https://www.linkedin.com"
+    # v3 fix: LinkedIn now tries a lightweight guest API first (no browser).
+    # If that returns 0 results it falls back to Playwright with extended jitter.
+    # Adjust min_interval_minutes to throttle repeat runs (0 = no throttle).
+    min_interval_minutes: 0
 
   ziprecruiter:
     enabled: true
@@ -41,8 +42,7 @@ job_boards:
 
   dice:
     enabled: true
-    # Uses Dice's internal search API — no key required.
-    base_url: "https://job-search-api.svc.dhigroupinc.com"
+    base_url: "https://www.dice.com"
 
   simplyhired:
     enabled: true
@@ -54,15 +54,13 @@ job_boards:
 
   themuse:
     enabled: true
-    # The Muse has a completely free public API — no key required.
     base_url: "https://www.themuse.com/api/public"
 
   adzuna:
-    enabled: false   # Set to true after obtaining free API keys below.
-    # Register for free at: https://developer.adzuna.com/
+    enabled: false   # Set true after obtaining free API keys at developer.adzuna.com
     app_id: ""
     app_key: ""
-    country: "us"   # us, gb, ca, au, etc.
+    country: "us"
 
   careerbuilder:
     enabled: true
@@ -70,13 +68,22 @@ job_boards:
 
   remoteok:
     enabled: true
-    # Remote OK has a public JSON API — no key required.
     base_url: "https://remoteok.com/api"
 
   jobicy:
     enabled: true
-    # Jobicy has a free public API — no key required.
     base_url: "https://jobicy.com/api/v2"
+
+  # ── New in v3 ─────────────────────────────────────────────
+  builtin:
+    enabled: true
+    # Builtin.com — tech-focused board with strong NY/NJ metro coverage.
+    base_url: "https://builtin.com"
+
+  wellfound:
+    enabled: true
+    # Wellfound (formerly AngelList Talent) — startup + growth-stage tech roles.
+    base_url: "https://wellfound.com"
 
 # ── Search filters ────────────────────────────────────────────
 search:
@@ -85,23 +92,85 @@ search:
   remote_ok: true        # Include remote positions
   results_per_board: 25  # Max results per board per title (where supported)
 
+# ── Geo-priority ──────────────────────────────────────────────
+# Jobs whose location matches any of these keywords will be sorted
+# to the top of each section and highlighted with a gold border in
+# the email and a 📍 badge in the dashboard.
+geo_priority:
+  regions:
+    - "new jersey"
+    - " nj"
+    - ", nj"
+    - "(nj)"
+    - "connecticut"
+    - " ct"
+    - ", ct"
+    - "(ct)"
+    - "new york city"
+    - "nyc"
+    - "new york, ny"
+    - " ny,"
+    - "manhattan"
+    - "brooklyn"
+    - "queens"
+    - "bronx"
+    - "staten island"
+    - "jersey city"
+    - "hoboken"
+    - "newark"
+    - "stamford"
+    - "hartford"
+    - "bridgeport"
+    - "new haven"
+
+# ── AI scoring (Claude) ───────────────────────────────────────
+# Requires: ANTHROPIC_API_KEY environment variable
+# Each job receives a score 0–10 and a one-sentence match summary.
+ai:
+  enabled: false           # Set to true to enable (requires ANTHROPIC_API_KEY)
+  model: "claude-haiku-4-5-20251001"   # Fast + cheap; upgrade to Sonnet for more nuance
+  batch_size: 20           # Jobs per API call (keep ≤ 30 for best JSON reliability)
+  min_score: 0             # Filter out jobs below this score (0 = keep all)
+  profile: |
+    Experienced technology executive (CTO / CIO / VP of Technology) with 15+ years
+    leading enterprise IT, infrastructure, and engineering teams. Background includes
+    digital transformation, cloud strategy, end-user computing (EUC), and large-scale
+    programme delivery. Prefer roles in NJ, CT, or the NYC metro area.
+    Salary target: $250,000+.
+
+# ── Notifications ─────────────────────────────────────────────
+notifications:
+  slack:
+    enabled: false
+    webhook_url: ""        # or set SLACK_WEBHOOK_URL env var
+    max_jobs: 10           # top N jobs to mention (by AI score then recency)
+
+  sms:
+    enabled: false
+    account_sid: ""        # or set TWILIO_ACCOUNT_SID env var
+    auth_token: ""         # or set TWILIO_AUTH_TOKEN env var
+    from_number: ""        # Twilio number, e.g. "+15551234567"
+    to_number: ""          # Your number, e.g. "+19735551234"
+    max_jobs: 5
+
 # ── Email settings ────────────────────────────────────────────
 email:
   recipient: "cmoskowitz@gmail.com"
   sender: ""             # Your sending address, e.g. you@gmail.com
   sender_name: "JobHelp Bot"
-
-  # SMTP settings — defaults work for Gmail.
-  # For Gmail you MUST use an App Password (not your regular password).
-  # Create one at: https://myaccount.google.com/apppasswords
   smtp_server: "smtp.gmail.com"
   smtp_port: 587
   use_tls: true
-  password: ""           # Gmail App Password or SMTP password
+  password: ""           # Gmail App Password (not your regular password)
 
-  # ── Schedule ──────────────────────────────────────────────
-  # How often to send the digest email.
-  # Options: "daily", "hourly", or a cron expression like "0 8 * * *"
+  # Schedule: "daily", "hourly", or "HH:MM"
   schedule: "daily"
-  daily_time: "08:00"    # 24-hour time (HH:MM) used when schedule = "daily"
+  daily_time: "08:00"
   timezone: "America/New_York"
+
+# ── Web dashboard ─────────────────────────────────────────────
+# Launch with: python main.py --dashboard
+# Or:          python dashboard.py
+dashboard:
+  port: 5000
+  host: "0.0.0.0"
