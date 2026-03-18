@@ -139,6 +139,7 @@ _TEMPLATE = """<!DOCTYPE html>
              oninput="renderJobs()">
     </label>
     <label><input type="checkbox" id="filter-geo" onchange="renderJobs()"> NJ/CT/NYC only</label>
+    <label><input type="checkbox" id="filter-all-runs" onchange="loadJobs()"> All runs today</label>
     <label>Min AI score:
       <select id="filter-score" onchange="renderJobs()">
         <option value="0">Any</option>
@@ -195,7 +196,8 @@ async function loadDates() {
 // ── Jobs ─────────────────────────────────────────────────────────────────────
 async function loadJobs() {
   const date = document.getElementById('filter-date').value;
-  const resp = await fetch(`/api/jobs?date=${date}`);
+  const allRuns = document.getElementById('filter-all-runs').checked;
+  const resp = await fetch(`/api/jobs?date=${date}&all_runs=${allRuns}`);
   allJobs = await resp.json();
 
   // populate filter dropdowns
@@ -411,7 +413,8 @@ def api_dates():
 @app.route("/api/jobs")
 def api_jobs():
     run_date = request.args.get("date") or date.today().isoformat()
-    jobs = state.get_cached_jobs(run_date)
+    all_runs = request.args.get("all_runs", "false").lower() == "true"
+    jobs = state.get_cached_jobs(run_date, latest_run_only=not all_runs)
     return jsonify(jobs)
 
 

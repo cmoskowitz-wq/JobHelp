@@ -67,6 +67,7 @@ def _init_db(conn: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS job_cache (
             job_key    TEXT NOT NULL,
             run_date   TEXT NOT NULL,
+            run_ts     TEXT,            -- ISO-8601 UTC timestamp of the run
             data       TEXT NOT NULL,   -- JSON blob
             PRIMARY KEY (job_key, run_date)
         );
@@ -91,6 +92,12 @@ def _init_db(conn: sqlite3.Connection) -> None:
         );
     """)
     conn.commit()
+    # Migrate existing databases that lack the run_ts column
+    try:
+        conn.execute("ALTER TABLE job_cache ADD COLUMN run_ts TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
 
 
 # ── Key helper ────────────────────────────────────────────────────────────────
@@ -178,32 +185,57 @@ def record_run() -> None:
 def save_jobs_to_cache(jobs: List[Job]) -> None:
     """Persist the current run's jobs for the web dashboard."""
     today = date.today().isoformat()
+    run_ts = datetime.now(timezone.utc).isoformat()
     conn = _connect()
     try:
         rows = []
         for job in jobs:
             key = _job_key(job.title, job.company)
             data = json.dumps(job.to_dict())
-            rows.append((key, today, data))
+            rows.append((key, today, run_ts, data))
         conn.executemany(
-            "INSERT OR REPLACE INTO job_cache (job_key, run_date, data) VALUES (?, ?, ?)",
+            "INSERT OR REPLACE INTO job_cache (job_key, run_date, run_ts, data) VALUES (?, ?, ?, ?)",
             rows,
         )
         conn.commit()
-        logger.info("[state] Cached %d job(s) for dashboard.", len(jobs))
+        logger.info("[state] Cached %d job(s) for dashboard (run_ts=%s).", len(jobs), run_ts)
     finally:
         conn.close()
 
 
-def get_cached_jobs(run_date: Optional[str] = None) -> list[dict]:
-    """Return jobs from the cache for the given date (default: today)."""
+def get_cached_jobs(run_date: Optional[str] = None, latest_run_only: bool = True) -> list[dict]:
+    """Return jobs from the cache for the given date (default: today).
+
+    When latest_run_only=True (the default), only jobs from the most recent
+    run for that date are returned — matching what was sent in the last email.
+    Set latest_run_only=False to see all accumulated jobs for the day.
+    """
     target = run_date or date.today().isoformat()
     conn = _connect()
     try:
-        rows = conn.execute(
-            "SELECT data FROM job_cache WHERE run_date = ? ORDER BY rowid",
-            (target,),
-        ).fetchall()
+        if latest_run_only:
+            # Find the most recent run_ts for this date
+            ts_row = conn.execute(
+                "SELECT MAX(run_ts) as latest FROM job_cache WHERE run_date = ?",
+                (target,),
+            ).fetchone()
+            latest_ts = ts_row["latest"] if ts_row else None
+            if latest_ts:
+                rows = conn.execute(
+                    "SELECT data FROM job_cache WHERE run_date = ? AND run_ts = ? ORDER BY rowid",
+                    (target, latest_ts),
+                ).fetchall()
+            else:
+                # Fallback for legacy rows without run_ts
+                rows = conn.execute(
+                    "SELECT data FROM job_cache WHERE run_date = ? ORDER BY rowid",
+                    (target,),
+                ).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT data FROM job_cache WHERE run_date = ? ORDER BY rowid",
+                (target,),
+            ).fetchall()
         jobs = []
         for row in rows:
             try:
