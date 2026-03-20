@@ -4,7 +4,7 @@
 #  AI scoring, notifications, geo-priority, and dashboard.
 # ============================================================
 
-version: "JobHelp Version 4"
+version: "JobHelp Version 3"
 
 # ── Job titles to search for ────────────────────────────────
 job_titles:
@@ -84,19 +84,6 @@ job_boards:
     enabled: true
     # Wellfound (formerly AngelList Talent) — startup + growth-stage tech roles.
     base_url: "https://wellfound.com"
-
-# ── v4 Filters ────────────────────────────────────────────────
-# Jobs matching exclude_title_keywords (case-insensitive) are dropped
-# before emailing. Add any terms that signal an irrelevant role.
-# min_salary: drop jobs where the KNOWN max salary is below this value.
-# Set to 0 to disable (jobs with no salary info are always kept).
-filters:
-  exclude_title_keywords:
-    - "junior"
-    - "intern"
-    - "staff engineer"
-    - "associate"
-  min_salary: 0   # e.g. 150000 — only excludes jobs with confirmed salary below this
 
 # ── Search filters ────────────────────────────────────────────
 search:

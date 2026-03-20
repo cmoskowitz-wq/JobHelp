@@ -1,6 +1,13 @@
 """
-email_sender.py — JobHelp Version 1
+email_sender.py — JobHelp Version 3
 Formats job results as an HTML email digest and sends via SMTP.
+
+v3 changes:
+  - Job cards now display salary when available
+  - AI score badge + one-line AI summary in each card
+  - Geo-priority jobs (NJ/CT/NYC) show a location pin badge and float to the
+    top of each section
+  - Subject line includes salary/geo highlights
 """
 
 from __future__ import annotations
@@ -9,6 +16,7 @@ import logging
 import smtplib
 from collections import defaultdict
 from datetime import datetime, timezone
+from typing import Optional
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from typing import List
@@ -25,17 +33,20 @@ _HTML_HEAD = """\
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting">
+<meta name="format-detection" content="telephone=no,date=no,address=no,email=no">
 <title>JobHelp — Daily Digest</title>
 </head>
 <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
-             background:#f4f6f9;color:#333;margin:0;padding:0;">
-<div style="max-width:600px;margin:0 auto;background:#f4f6f9;">
+             background:#f4f6f9;color:#333;margin:0;padding:0;-webkit-text-size-adjust:100%;
+             word-break:break-word;">
+<div style="max-width:620px;width:100%;margin:0 auto;background:#f4f6f9;">
 """
 
 _HTML_FOOT = """\
   <div style="background:#f8fafc;padding:16px 20px;font-size:12px;color:#aaa;
               border-top:1px solid #e2e8f0;text-align:center;">
-    JobHelp &bull; Generated {generated} UTC &bull;
+    JobHelp v3 &bull; Generated {generated} UTC &bull;
     Edit <code>config.yaml</code> to adjust searches.
   </div>
 </div>
@@ -59,81 +70,201 @@ def _fmt_posted(dt: datetime | None) -> str:
     return dt.strftime("%b %d")
 
 
+def _fmt_salary(job: Job) -> str:
+    """Return a human-readable salary string, or empty string."""
+    if job.salary_text:
+        return job.salary_text
+    if job.salary_min:
+        lo = f"${job.salary_min:,}"
+        if job.salary_max and job.salary_max != job.salary_min:
+            return f"{lo} – ${job.salary_max:,}"
+        return lo
+    return ""
+
+
 def _escape(text: str) -> str:
-    return (text
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;"))
+    return (
+        text
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
+_UNKNOWN_VALUES = {"unknown", "n/a", "not specified", "none", "null", ""}
+
+
+def _clean(value: str) -> str:
+    """Return the value if meaningful, otherwise empty string."""
+    return "" if value.strip().lower() in _UNKNOWN_VALUES else value.strip()
+
+
+# ── Sort helpers ──────────────────────────────────────────────────────────────
+
+def _sort_key(j: Job) -> tuple:
+    """
+    Primary:   geo_priority desc (True first)
+    Secondary: ai_score desc
+    Tertiary:  posted desc
+    """
+    geo = not j.geo_priority            # False < True, so negate to get True first
+    score = -(j.ai_score if j.ai_score is not None else 5.0)
+    posted = j.posted or datetime.min.replace(tzinfo=timezone.utc)
+    if posted.tzinfo is None:
+        posted = posted.replace(tzinfo=timezone.utc)
+    return (geo, score, -posted.timestamp())
 
 
 # ── Report builder ────────────────────────────────────────────────────────────
 
-def _sort_key(j: Job) -> datetime:
-    if j.posted is None:
-        return datetime.min.replace(tzinfo=timezone.utc)
-    if j.posted.tzinfo is None:
-        return j.posted.replace(tzinfo=timezone.utc)
-    return j.posted
-
-
 def _job_card(job: Job) -> str:
-    """Render a single job as an inline-styled card (works in all email clients)."""
+    """Render a single job as an inline-styled card."""
+    # ── Title (linked or plain) ───────────────────────────────────────────────
     if job.url:
         title_html = (
             f'<a href="{_escape(job.url)}" target="_blank" '
             f'style="color:#2563eb;font-weight:700;font-size:16px;'
-            f'text-decoration:none;line-height:1.4;">'
+            f'text-decoration:none;line-height:1.4;display:inline;">'
             f'{_escape(job.title)}</a>'
         )
     else:
         title_html = (
-            f'<span style="font-weight:700;font-size:16px;color:#1e3a5f;">'
+            f'<span style="font-weight:700;font-size:16px;color:#1e3a5f;line-height:1.4;">'
             f'{_escape(job.title)}</span>'
         )
 
-    remote_badge = ""
+    # ── Badges ────────────────────────────────────────────────────────────────
+    badges = ""
+    if job.geo_priority:
+        badges += (
+            '<span style="background:#fef3c7;color:#92400e;font-size:11px;'
+            'font-weight:700;padding:3px 8px;border-radius:4px;'
+            'margin-left:8px;text-transform:uppercase;white-space:nowrap;'
+            'display:inline-block;vertical-align:middle;">'
+            '&#128205;&nbsp;NJ/CT/NYC</span>'
+        )
     if job.remote:
-        remote_badge = (
-            '<span style="background:#dcfce7;color:#166534;font-size:10px;'
-            'font-weight:700;padding:2px 7px;border-radius:4px;'
-            'margin-left:8px;text-transform:uppercase;vertical-align:middle;">'
+        badges += (
+            '<span style="background:#dcfce7;color:#166534;font-size:11px;'
+            'font-weight:700;padding:3px 8px;border-radius:4px;'
+            'margin-left:8px;text-transform:uppercase;white-space:nowrap;'
+            'display:inline-block;vertical-align:middle;">'
             'Remote</span>'
         )
 
     board_badge = (
         f'<span style="background:#e8edf5;color:#1e3a5f;font-size:11px;'
-        f'font-weight:600;padding:2px 8px;border-radius:12px;'
-        f'text-transform:uppercase;letter-spacing:.5px;">'
+        f'font-weight:600;padding:3px 9px;border-radius:12px;'
+        f'text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;">'
         f'{_escape(job.source)}</span>'
     )
 
+    # ── AI score ──────────────────────────────────────────────────────────────
+    ai_badge = ""
+    if job.ai_score is not None:
+        score_color = (
+            "#166534" if job.ai_score >= 7
+            else "#92400e" if job.ai_score >= 4
+            else "#991b1b"
+        )
+        score_bg = (
+            "#dcfce7" if job.ai_score >= 7
+            else "#fef3c7" if job.ai_score >= 4
+            else "#fee2e2"
+        )
+        ai_badge = (
+            f'<span style="background:{score_bg};color:{score_color};font-size:11px;'
+            f'font-weight:700;padding:3px 9px;border-radius:12px;margin-left:6px;white-space:nowrap;">'
+            f'AI&nbsp;{job.ai_score:.1f}/10</span>'
+        )
+
+    # ── Salary ────────────────────────────────────────────────────────────────
+    salary_str = _fmt_salary(job)
+    salary_html = ""
+    if salary_str:
+        salary_html = (
+            f'<div style="color:#166534;font-size:13px;font-weight:600;margin-top:6px;">'
+            f'&#128176;&nbsp;{_escape(salary_str)}</div>'
+        )
+
+    # ── AI summary ────────────────────────────────────────────────────────────
+    summary_html = ""
+    if job.ai_summary:
+        summary_html = (
+            f'<div style="color:#6b7280;font-size:13px;font-style:italic;margin-top:6px;line-height:1.4;">'
+            f'{_escape(job.ai_summary)}</div>'
+        )
+
+    # ── Company / Location (skip if "Unknown" or empty) ───────────────────────
+    company = _clean(job.company)
+    location = _clean(job.location)
+
+    meta_parts = []
+    if company:
+        meta_parts.append(
+            f'<span style="color:#444;font-size:14px;font-weight:600;">{_escape(company)}</span>'
+        )
+    if location:
+        meta_parts.append(
+            f'<span style="color:#888;font-size:13px;">{_escape(location)}</span>'
+        )
+    meta_html = ""
+    if meta_parts:
+        meta_html = (
+            '<div style="margin-top:6px;line-height:1.5;">'
+            + '<span style="color:#ccc;margin:0 6px;">|</span>'.join(meta_parts)
+            + '</div>'
+        )
+
     posted_str = _fmt_posted(job.posted)
 
+    # ── Geo highlight: left border colour ─────────────────────────────────────
+    border_color = "#f59e0b" if job.geo_priority else "#e2e8f0"
+
     return (
-        f'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;'
-        f'margin:8px 16px;padding:14px 16px;">'
-        f'  <div style="line-height:1.4;">{title_html}{remote_badge}</div>'
-        f'  <div style="color:#555;font-size:13px;margin-top:6px;">{_escape(job.company)}</div>'
-        f'  <div style="color:#888;font-size:12px;margin-top:2px;">{_escape(job.location)}</div>'
-        f'  <div style="margin-top:10px;">'
-        f'    {board_badge}'
-        f'    <span style="color:#aaa;font-size:12px;margin-left:10px;">{posted_str}</span>'
+        f'<div style="background:#fff;border:1px solid {border_color};'
+        f'border-left:4px solid {border_color};border-radius:8px;'
+        f'margin:8px 12px;padding:14px 16px;box-sizing:border-box;">'
+        f'  <div style="line-height:1.5;word-break:break-word;">{title_html}{badges}</div>'
+        f'  {meta_html}'
+        f'  {salary_html}'
+        f'  {summary_html}'
+        f'  <div style="margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px;">'
+        f'    {board_badge}{ai_badge}'
+        f'    <span style="color:#aaa;font-size:12px;margin-left:4px;">{posted_str}</span>'
         f'  </div>'
         f'</div>\n'
     )
 
 
-def build_html_report(jobs: List[Job], config: dict) -> str:
-    """Return a complete HTML email body using inline-styled cards."""
+def _board_stats_html(board_counts: dict[str, int]) -> str:
+    """Render a compact board-by-board stats line for the email footer."""
+    if not board_counts:
+        return ""
+    parts = []
+    for name, count in sorted(board_counts.items()):
+        if count < 0:
+            parts.append(f'<span style="color:#991b1b;">{name}: error</span>')
+        elif count == 0:
+            parts.append(f'<span style="color:#aaa;">{name}: 0</span>')
+        else:
+            parts.append(f'<span style="color:#1e3a5f;font-weight:600;">{name}: {count}</span>')
+    return " &nbsp;&bull;&nbsp; ".join(parts)
+
+
+def build_html_report(jobs: List[Job], config: dict, board_counts: Optional[dict] = None) -> str:
     now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M")
     hours = config.get("search", {}).get("hours_ago", 24)
     job_titles = config.get("job_titles", [])
 
-    # Group by search_term
     by_title: dict[str, List[Job]] = defaultdict(list)
     for job in jobs:
         by_title[job.search_term].append(job)
+
+    geo_total = sum(1 for j in jobs if j.geo_priority)
+    boards = len({j.source for j in jobs})
+    ai_scored = sum(1 for j in jobs if j.ai_score is not None)
 
     html = _HTML_HEAD
 
@@ -141,32 +272,59 @@ def build_html_report(jobs: List[Job], config: dict) -> str:
     html += (
         f'<div style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);'
         f'color:#fff;padding:24px 20px;">'
-        f'  <div style="font-size:22px;font-weight:700;margin:0 0 6px;">&#128188; JobHelp &mdash; Daily Digest</div>'
-        f'  <div style="opacity:.85;font-size:13px;">Last {hours}h &bull; {now_str} UTC &bull; {len(jobs)} jobs found</div>'
+        f'  <div style="font-size:22px;font-weight:700;margin:0 0 6px;">'
+        f'    &#128188; JobHelp &mdash; Daily Digest'
+        f'  </div>'
+        f'  <div style="opacity:.85;font-size:13px;">'
+        f'    Last {hours}h &bull; {now_str} UTC &bull; {len(jobs)} jobs found'
+        f'  </div>'
         f'</div>\n'
     )
 
     # ── Summary bar ───────────────────────────────────────────────────────────
-    boards = len({j.source for j in jobs})
+    geo_badge = (
+        f'  <span style="margin-right:20px;">&#128205; NJ/CT/NYC: '
+        f'<strong style="color:#92400e;">{geo_total}</strong></span>'
+        if geo_total else ""
+    )
+    ai_badge_bar = (
+        f'  <span>AI scored: <strong style="color:#1e3a5f;">{ai_scored}</strong></span>'
+        if ai_scored else ""
+    )
     html += (
         f'<div style="background:#f0f4ff;border-bottom:1px solid #dbe4f5;'
         f'padding:12px 20px;font-size:13px;color:#555;">'
-        f'  <span style="margin-right:20px;">Total: <strong style="color:#1e3a5f;">{len(jobs)}</strong></span>'
-        f'  <span style="margin-right:20px;">Boards: <strong style="color:#1e3a5f;">{boards}</strong></span>'
-        f'  <span>Titles: <strong style="color:#1e3a5f;">{len(job_titles)}</strong></span>'
+        f'  <span style="display:inline-block;margin-right:16px;white-space:nowrap;">'
+        f'    Total: <strong style="color:#1e3a5f;">{len(jobs)}</strong>'
+        f'  </span>'
+        f'  <span style="display:inline-block;margin-right:16px;white-space:nowrap;">'
+        f'    Boards: <strong style="color:#1e3a5f;">{boards}</strong>'
+        f'  </span>'
+        f'  <span style="display:inline-block;margin-right:16px;white-space:nowrap;">'
+        f'    Titles: <strong style="color:#1e3a5f;">{len(job_titles)}</strong>'
+        f'  </span>'
+        f'  {geo_badge}{ai_badge_bar}'
         f'</div>\n'
     )
 
     # ── Section per job title ─────────────────────────────────────────────────
     for title in job_titles:
-        title_jobs = sorted(by_title.get(title, []), key=_sort_key, reverse=True)
+        title_jobs = sorted(by_title.get(title, []), key=_sort_key)
         count = len(title_jobs)
+        geo_count = sum(1 for j in title_jobs if j.geo_priority)
+
+        geo_note = (
+            f'<span style="font-size:12px;color:#92400e;margin-left:8px;">'
+            f'&#128205; {geo_count} local</span>'
+            if geo_count else ""
+        )
 
         html += (
             f'<div style="font-size:17px;font-weight:700;color:#1e3a5f;'
             f'padding:20px 20px 10px;border-bottom:2px solid #e8edf5;">'
             f'  {_escape(title)}'
-            f'  <span style="font-size:13px;font-weight:400;color:#888;margin-left:8px;">({count})</span>'
+            f'  <span style="font-size:13px;font-weight:400;color:#888;margin-left:8px;">'
+            f'({count})</span>{geo_note}'
             f'</div>\n'
         )
 
@@ -182,24 +340,33 @@ def build_html_report(jobs: List[Job], config: dict) -> str:
 
         html += '<div style="height:8px;"></div>\n'
 
-    # ── Uncategorized (edge case) ─────────────────────────────────────────────
+    # ── Uncategorized ─────────────────────────────────────────────────────────
     uncategorized = [j for j in jobs if j.search_term not in job_titles]
     if uncategorized:
         html += (
             '<div style="font-size:17px;font-weight:700;color:#1e3a5f;'
             'padding:20px 20px 10px;border-bottom:2px solid #e8edf5;">Other Results</div>\n'
         )
-        for job in sorted(uncategorized, key=_sort_key, reverse=True):
+        for job in sorted(uncategorized, key=_sort_key):
             html += _job_card(job)
+
+    # ── Board stats footer ────────────────────────────────────────────────────
+    if board_counts:
+        stats_html = _board_stats_html(board_counts)
+        html += (
+            f'<div style="background:#f8fafc;padding:12px 20px;font-size:11px;'
+            f'color:#888;border-top:1px solid #e2e8f0;line-height:1.8;">'
+            f'  <strong style="color:#555;">Board raw counts:</strong>&nbsp; {stats_html}'
+            f'</div>\n'
+        )
 
     html += _HTML_FOOT.format(generated=now_str)
     return html
 
 
 def build_plain_report(jobs: List[Job], config: dict) -> str:
-    """Plain-text fallback for email clients that don't render HTML."""
     lines = [
-        "JobHelp Version 1 — Daily Digest",
+        "JobHelp Version 3 — Daily Digest",
         f"Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M')} UTC",
         f"Total results: {len(jobs)}",
         "=" * 60,
@@ -210,14 +377,22 @@ def build_plain_report(jobs: List[Job], config: dict) -> str:
         by_title[job.search_term].append(job)
 
     for title in config.get("job_titles", []):
-        title_jobs = by_title.get(title, [])
+        title_jobs = sorted(by_title.get(title, []), key=_sort_key)
         lines.append(f"\n{'─'*60}\n{title.upper()} ({len(title_jobs)} results)\n{'─'*60}")
         if not title_jobs:
-            lines.append("  No results in the last 24 hours.\n")
+            lines.append("  No results in the last window.\n")
             continue
         for job in title_jobs:
-            lines.append(f"  {job.title}")
+            geo_flag = " [NJ/CT/NYC]" if job.geo_priority else ""
+            lines.append(f"  {job.title}{geo_flag}")
             lines.append(f"  {job.company} | {job.location} | {job.source}")
+            sal = _fmt_salary(job)
+            if sal:
+                lines.append(f"  Salary: {sal}")
+            if job.ai_score is not None:
+                lines.append(f"  AI Score: {job.ai_score:.1f}/10")
+            if job.ai_summary:
+                lines.append(f"  {job.ai_summary}")
             if job.url:
                 lines.append(f"  {job.url}")
             if job.posted:
@@ -229,11 +404,7 @@ def build_plain_report(jobs: List[Job], config: dict) -> str:
 
 # ── Sender ────────────────────────────────────────────────────────────────────
 
-def send_report(jobs: List[Job], config: dict) -> bool:
-    """
-    Build and send the HTML email digest.
-    Returns True on success.
-    """
+def send_report(jobs: List[Job], config: dict, board_counts: Optional[dict] = None) -> bool:
     email_cfg = config.get("email", {})
     recipient = email_cfg.get("recipient", "")
     sender = email_cfg.get("sender", "")
@@ -251,9 +422,11 @@ def send_report(jobs: List[Job], config: dict) -> bool:
         logger.error("Sender email / password not configured — cannot send.")
         return False
 
+    geo_count = sum(1 for j in jobs if j.geo_priority)
+    geo_note = f" | {geo_count} NJ/CT/NYC" if geo_count else ""
     subject = (
-        f"JobHelp v1 — {len(jobs)} Tech Leadership Jobs "
-        f"(last {hours}h) — {datetime.utcnow().strftime('%b %d, %Y')}"
+        f"JobHelp v3 — {len(jobs)} Tech Leadership Jobs "
+        f"(last {hours}h{geo_note}) — {datetime.utcnow().strftime('%b %d, %Y')}"
     )
 
     msg = MIMEMultipart("alternative")
@@ -262,7 +435,7 @@ def send_report(jobs: List[Job], config: dict) -> bool:
     msg["To"] = recipient
 
     plain = build_plain_report(jobs, config)
-    html = build_html_report(jobs, config)
+    html = build_html_report(jobs, config, board_counts=board_counts)
 
     msg.attach(MIMEText(plain, "plain"))
     msg.attach(MIMEText(html, "html"))
