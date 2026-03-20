@@ -337,7 +337,7 @@ def main() -> None:
         logger.error("Invalid config.yaml: %s", exc)
         sys.exit(1)
 
-    logger.info("JobHelp v3 — %s", cfg.get("version", "JobHelp Version 3"))
+    logger.info("JobHelp v4 — %s", cfg.get("version", "JobHelp Version 4"))
 
     if args.now:
         run_job(cfg, dry_run=args.dry_run)
