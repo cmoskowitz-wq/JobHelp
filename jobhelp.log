@@ -2912,3 +2912,62 @@ Call log:
 2026-03-27 11:01:52  INFO      state — [state] Cached 49 job(s) for dashboard (run_ts=2026-03-27T15:01:52.512597+00:00).
 2026-03-27 11:01:54  INFO      email_sender — Email sent to cmoskowitz@gmail.com (49 jobs)
 2026-03-27 11:01:54  INFO      state — [state] Run recorded.
+2026-03-27 13:00:03  INFO      jobhelp — JobHelp v4 — JobHelp Version 4
+2026-03-27 13:00:03  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-27 13:00:03  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Indeed
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Dice
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Monster
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: The Muse
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Builtin
+2026-03-27 13:00:05  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-27 13:00:05  INFO      scrapers — JobHelp v4 — 14 board(s) × 8 title(s) [parallel]
+2026-03-27 13:00:05  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'CTO'.
+2026-03-27 13:00:07  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'CIO'.
+2026-03-27 13:00:10  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'VP of Technology'.
+2026-03-27 13:00:12  INFO      scrapers — [LinkedIn] Guest API returned 5 result(s) for 'Head of IT'.
+2026-03-27 13:00:14  INFO      scrapers — [LinkedIn] Guest API returned 3 result(s) for 'Head of Infrastructure'.
+2026-03-27 13:00:16  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'SVP of Technology'.
+2026-03-27 13:00:18  INFO      scrapers — [LinkedIn] Guest API returned 6 result(s) for 'EUC'.
+2026-03-27 13:00:18  INFO      scrapers — [The Muse] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:00:20  INFO      scrapers — [LinkedIn] Guest API returned 9 result(s) for 'Director of Technology'.
+2026-03-27 13:00:20  INFO      scrapers — [RemoteOK] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:00:23  INFO      scrapers — [Jobicy] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:00:32  INFO      scrapers — [Adzuna] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:24  INFO      scrapers — [Wellfound] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:24  INFO      scrapers — [CareerBuilder] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:30  INFO      scrapers — [Monster] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:30  INFO      scrapers — [Dice] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:30  INFO      scrapers — [ZipRecruiter] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:40  INFO      scrapers — [SimplyHired] Zero results — retrying 'CTO' with extended wait.
+2026-03-27 13:01:54  INFO      scrapers —   Indeed → 121 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   LinkedIn → 51 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Dice → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Monster → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Builtin → 157 result(s)
+2026-03-27 13:01:54  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-27 13:01:54  INFO      scrapers — Fuzzy dedup removed 116 near-duplicate(s).
+2026-03-27 13:01:54  INFO      jobhelp — After fuzzy dedup: 413 unique job(s).
+2026-03-27 13:01:54  INFO      state — [state] Filtered 347 already-seen job(s).
+2026-03-27 13:01:54  INFO      jobhelp — After state filter: 66 new job(s) to report.
+2026-03-27 13:01:54  INFO      jobhelp — Keyword filter: removed 11 job(s) matching exclusion list.
+2026-03-27 13:01:54  INFO      jobhelp — Geo-priority: 7 NJ/CT/NYC job(s) sorted to top.
+2026-03-27 13:01:54  INFO      state — [state] Cached 55 job(s) for dashboard (run_ts=2026-03-27T17:01:54.894640+00:00).
+2026-03-27 13:01:55  INFO      email_sender — Email sent to cmoskowitz@gmail.com (55 jobs)
+2026-03-27 13:01:55  INFO      state — [state] Run recorded.
