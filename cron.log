@@ -1,0 +1,626 @@
+2026-03-18 13:00:01  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-18 13:00:01  INFO      state — [state] Last run was 0.9h ago — using 1h window.
+2026-03-18 13:00:01  INFO      jobhelp — Search window: last 1 hour(s).
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Indeed
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Dice
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Monster
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: The Muse
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Builtin
+2026-03-18 13:00:03  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-18 13:00:03  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-18 13:00:03  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-18 13:00:13  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-18 13:00:24  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-18 13:00:37  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-18 13:00:50  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-18 13:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-18 13:01:08  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-18 13:01:15  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-18 13:01:39  INFO      scrapers —   Indeed → 111 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Dice → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Monster → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Builtin → 154 result(s)
+2026-03-18 13:01:39  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-18 13:01:39  INFO      scrapers — Fuzzy dedup removed 115 near-duplicate(s).
+2026-03-18 13:01:39  INFO      jobhelp — After fuzzy dedup: 350 unique job(s).
+2026-03-18 13:01:39  INFO      state — [state] Filtered 318 already-seen job(s).
+2026-03-18 13:01:39  INFO      jobhelp — After state filter: 32 new job(s) to report.
+2026-03-18 13:01:39  INFO      jobhelp — Geo-priority: 2 NJ/CT/NYC job(s) sorted to top.
+2026-03-18 13:01:39  INFO      state — [state] Cached 32 job(s) for dashboard (run_ts=2026-03-18T17:01:39.878968+00:00).
+2026-03-18 13:01:41  INFO      email_sender — Email sent to cmoskowitz@gmail.com (32 jobs)
+2026-03-18 13:01:41  INFO      state — [state] Run recorded.
+2026-03-18 15:00:01  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-18 15:00:01  INFO      state — [state] Last run was 0.4h ago — using 1h window.
+2026-03-18 15:00:01  INFO      jobhelp — Search window: last 1 hour(s).
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Indeed
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Dice
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Monster
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: The Muse
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Builtin
+2026-03-18 15:00:02  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-18 15:00:02  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-18 15:00:03  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-18 15:00:12  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-18 15:00:25  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-18 15:00:38  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-18 15:00:45  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-18 15:00:55  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-18 15:01:02  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-18 15:01:10  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-18 15:01:39  INFO      scrapers —   Indeed → 122 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Dice → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Monster → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Builtin → 154 result(s)
+2026-03-18 15:01:39  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-18 15:01:39  INFO      scrapers — Fuzzy dedup removed 113 near-duplicate(s).
+2026-03-18 15:01:39  INFO      jobhelp — After fuzzy dedup: 363 unique job(s).
+2026-03-18 15:01:39  INFO      state — [state] Filtered 349 already-seen job(s).
+2026-03-18 15:01:39  INFO      jobhelp — After state filter: 14 new job(s) to report.
+2026-03-18 15:01:39  INFO      jobhelp — Geo-priority: 2 NJ/CT/NYC job(s) sorted to top.
+2026-03-18 15:01:39  INFO      state — [state] Cached 14 job(s) for dashboard (run_ts=2026-03-18T19:01:39.543371+00:00).
+2026-03-18 15:01:40  INFO      email_sender — Email sent to cmoskowitz@gmail.com (14 jobs)
+2026-03-18 15:01:40  INFO      state — [state] Run recorded.
+2026-03-18 17:00:05  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-18 17:00:05  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-18 17:00:05  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Indeed
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Dice
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Monster
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: The Muse
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Builtin
+2026-03-18 17:00:09  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-18 17:00:09  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-18 17:00:09  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-18 17:00:21  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-18 17:00:33  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-18 17:00:47  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-18 17:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-18 17:01:05  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-18 17:01:16  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-18 17:01:27  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-18 17:01:44  INFO      scrapers —   Indeed → 122 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Dice → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Monster → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Builtin → 154 result(s)
+2026-03-18 17:01:44  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-18 17:01:45  INFO      scrapers — Fuzzy dedup removed 111 near-duplicate(s).
+2026-03-18 17:01:45  INFO      jobhelp — After fuzzy dedup: 365 unique job(s).
+2026-03-18 17:01:45  INFO      state — [state] Filtered 323 already-seen job(s).
+2026-03-18 17:01:45  INFO      jobhelp — After state filter: 42 new job(s) to report.
+2026-03-18 17:01:45  INFO      jobhelp — Geo-priority: 4 NJ/CT/NYC job(s) sorted to top.
+2026-03-18 17:01:45  INFO      state — [state] Cached 42 job(s) for dashboard (run_ts=2026-03-18T21:01:45.222555+00:00).
+2026-03-18 17:01:46  INFO      email_sender — Email sent to cmoskowitz@gmail.com (42 jobs)
+2026-03-18 17:01:46  INFO      state — [state] Run recorded.
+2026-03-18 19:00:06  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-18 19:00:06  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-18 19:00:06  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Indeed
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Dice
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Monster
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: The Muse
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Builtin
+2026-03-18 19:00:10  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-18 19:00:10  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-18 19:00:10  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-18 19:00:22  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-18 19:00:31  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-18 19:00:38  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-18 19:00:51  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-18 19:01:03  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-18 19:01:11  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-18 19:01:19  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-18 19:01:45  INFO      scrapers —   Indeed → 125 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Dice → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Monster → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Builtin → 153 result(s)
+2026-03-18 19:01:45  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-18 19:01:45  INFO      scrapers — Fuzzy dedup removed 108 near-duplicate(s).
+2026-03-18 19:01:45  INFO      jobhelp — After fuzzy dedup: 370 unique job(s).
+2026-03-18 19:01:45  INFO      state — [state] Filtered 323 already-seen job(s).
+2026-03-18 19:01:45  INFO      jobhelp — After state filter: 47 new job(s) to report.
+2026-03-18 19:01:45  INFO      jobhelp — Geo-priority: 2 NJ/CT/NYC job(s) sorted to top.
+2026-03-18 19:01:45  INFO      state — [state] Cached 47 job(s) for dashboard (run_ts=2026-03-18T23:01:45.690276+00:00).
+2026-03-18 19:01:46  INFO      email_sender — Email sent to cmoskowitz@gmail.com (47 jobs)
+2026-03-18 19:01:46  INFO      state — [state] Run recorded.
+2026-03-19 07:00:05  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 07:00:05  INFO      state — [state] No prior run today — using 24h window.
+2026-03-19 07:00:05  INFO      jobhelp — Search window: last 24 hour(s).
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 07:00:09  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 07:00:09  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 07:00:10  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'CTO'.
+2026-03-19 07:00:12  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'CIO'.
+2026-03-19 07:00:14  INFO      scrapers — [LinkedIn] Guest API returned 3 result(s) for 'VP of Technology'.
+2026-03-19 07:00:16  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'Head of IT'.
+2026-03-19 07:00:18  INFO      scrapers — [LinkedIn] Guest API returned 5 result(s) for 'Head of Infrastructure'.
+2026-03-19 07:00:20  INFO      scrapers — [LinkedIn] Guest API returned 5 result(s) for 'SVP of Technology'.
+2026-03-19 07:00:22  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'EUC'.
+2026-03-19 07:00:24  INFO      scrapers — [LinkedIn] Guest API returned 4 result(s) for 'Director of Technology'.
+2026-03-19 07:01:47  INFO      scrapers —   Indeed → 119 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   LinkedIn → 45 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Glassdoor → 150 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Adzuna → 131 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Jobicy → 5 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Builtin → 153 result(s)
+2026-03-19 07:01:47  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 07:01:47  INFO      scrapers — Fuzzy dedup removed 154 near-duplicate(s).
+2026-03-19 07:01:47  INFO      jobhelp — After fuzzy dedup: 449 unique job(s).
+2026-03-19 07:01:47  INFO      jobhelp — After state filter: 449 new job(s) to report.
+2026-03-19 07:01:47  INFO      jobhelp — Geo-priority: 33 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 07:01:47  INFO      state — [state] Cached 449 job(s) for dashboard (run_ts=2026-03-19T11:01:47.479418+00:00).
+2026-03-19 07:01:49  INFO      email_sender — Email sent to cmoskowitz@gmail.com (449 jobs)
+2026-03-19 07:01:49  INFO      state — [state] Run recorded.
+2026-03-19 09:00:02  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 09:00:02  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-19 09:00:02  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 09:00:03  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 09:00:03  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 09:00:04  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-19 09:00:13  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-19 09:00:23  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-19 09:00:36  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-19 09:00:44  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-19 09:00:45  WARNING   scrapers — [Glassdoor] Playwright error on https://www.glassdoor.com/Job/jobs.htm?sc.keyword=CIO&fromAge=1&sort.sortType=date&sort.descending=true: Page.goto: Timeout 35000ms exceeded.
+Call log:
+  - navigating to "https://www.glassdoor.com/Job/jobs.htm?sc.keyword=CIO&fromAge=1&sort.sortType=date&sort.descending=true", waiting until "domcontentloaded"
+
+2026-03-19 09:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-19 09:01:06  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-19 09:01:18  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-19 09:01:41  INFO      scrapers —   Indeed → 125 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Glassdoor → 175 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Builtin → 154 result(s)
+2026-03-19 09:01:41  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 09:01:41  INFO      scrapers — Fuzzy dedup removed 114 near-duplicate(s).
+2026-03-19 09:01:41  INFO      jobhelp — After fuzzy dedup: 340 unique job(s).
+2026-03-19 09:01:41  INFO      state — [state] Filtered 194 already-seen job(s).
+2026-03-19 09:01:41  INFO      jobhelp — After state filter: 146 new job(s) to report.
+2026-03-19 09:01:41  INFO      jobhelp — Geo-priority: 17 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 09:01:41  INFO      state — [state] Cached 146 job(s) for dashboard (run_ts=2026-03-19T13:01:41.424181+00:00).
+2026-03-19 09:01:43  INFO      email_sender — Email sent to cmoskowitz@gmail.com (146 jobs)
+2026-03-19 09:01:43  INFO      state — [state] Run recorded.
+2026-03-19 11:00:04  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 11:00:04  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-19 11:00:04  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 11:00:07  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 11:00:07  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 11:00:08  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-19 11:00:20  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-19 11:00:33  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-19 11:00:41  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-19 11:00:53  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-19 11:01:05  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-19 11:01:16  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-19 11:01:28  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-19 11:01:41  INFO      scrapers —   Indeed → 110 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Builtin → 153 result(s)
+2026-03-19 11:01:41  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 11:01:41  INFO      scrapers — Fuzzy dedup removed 116 near-duplicate(s).
+2026-03-19 11:01:41  INFO      jobhelp — After fuzzy dedup: 347 unique job(s).
+2026-03-19 11:01:42  INFO      state — [state] Filtered 274 already-seen job(s).
+2026-03-19 11:01:42  INFO      jobhelp — After state filter: 73 new job(s) to report.
+2026-03-19 11:01:42  INFO      jobhelp — Geo-priority: 10 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 11:01:42  INFO      state — [state] Cached 73 job(s) for dashboard (run_ts=2026-03-19T15:01:42.003551+00:00).
+2026-03-19 11:01:43  INFO      email_sender — Email sent to cmoskowitz@gmail.com (73 jobs)
+2026-03-19 11:01:43  INFO      state — [state] Run recorded.
+2026-03-19 13:00:01  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 13:00:01  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-19 13:00:01  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 13:00:02  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 13:00:02  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 13:00:03  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-19 13:00:15  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-19 13:00:24  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-19 13:00:35  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-19 13:00:45  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-19 13:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-19 13:01:08  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-19 13:01:19  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-19 13:01:34  INFO      scrapers —   Indeed → 113 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Builtin → 153 result(s)
+2026-03-19 13:01:34  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 13:01:35  INFO      scrapers — Fuzzy dedup removed 105 near-duplicate(s).
+2026-03-19 13:01:35  INFO      jobhelp — After fuzzy dedup: 361 unique job(s).
+2026-03-19 13:01:35  INFO      state — [state] Filtered 303 already-seen job(s).
+2026-03-19 13:01:35  INFO      jobhelp — After state filter: 58 new job(s) to report.
+2026-03-19 13:01:35  INFO      jobhelp — Geo-priority: 10 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 13:01:35  INFO      state — [state] Cached 58 job(s) for dashboard (run_ts=2026-03-19T17:01:35.161983+00:00).
+2026-03-19 13:01:36  INFO      email_sender — Email sent to cmoskowitz@gmail.com (58 jobs)
+2026-03-19 13:01:36  INFO      state — [state] Run recorded.
+2026-03-19 15:00:01  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 15:00:01  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-19 15:00:01  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 15:00:03  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 15:00:03  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 15:00:03  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-19 15:00:12  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-19 15:00:24  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-19 15:00:32  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-19 15:00:42  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-19 15:00:50  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-19 15:01:01  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-19 15:01:10  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-19 15:01:38  INFO      scrapers —   Indeed → 120 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Builtin → 152 result(s)
+2026-03-19 15:01:38  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 15:01:38  INFO      scrapers — Fuzzy dedup removed 114 near-duplicate(s).
+2026-03-19 15:01:38  INFO      jobhelp — After fuzzy dedup: 358 unique job(s).
+2026-03-19 15:01:38  INFO      state — [state] Filtered 316 already-seen job(s).
+2026-03-19 15:01:38  INFO      jobhelp — After state filter: 42 new job(s) to report.
+2026-03-19 15:01:38  INFO      jobhelp — Geo-priority: 1 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 15:01:38  INFO      state — [state] Cached 42 job(s) for dashboard (run_ts=2026-03-19T19:01:38.821617+00:00).
+2026-03-19 15:01:40  INFO      email_sender — Email sent to cmoskowitz@gmail.com (42 jobs)
+2026-03-19 15:01:40  INFO      state — [state] Run recorded.
+2026-03-19 17:00:01  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 17:00:01  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-19 17:00:01  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 17:00:03  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 17:00:03  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 17:00:03  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-19 17:00:15  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-19 17:00:24  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-19 17:00:36  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-19 17:00:45  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-19 17:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-19 17:01:06  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-19 17:01:15  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-19 17:01:38  INFO      scrapers —   Indeed → 113 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Builtin → 152 result(s)
+2026-03-19 17:01:38  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 17:01:39  INFO      scrapers — Fuzzy dedup removed 104 near-duplicate(s).
+2026-03-19 17:01:39  INFO      jobhelp — After fuzzy dedup: 361 unique job(s).
+2026-03-19 17:01:39  INFO      state — [state] Filtered 311 already-seen job(s).
+2026-03-19 17:01:39  INFO      jobhelp — After state filter: 50 new job(s) to report.
+2026-03-19 17:01:39  INFO      jobhelp — Geo-priority: 5 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 17:01:39  INFO      state — [state] Cached 50 job(s) for dashboard (run_ts=2026-03-19T21:01:39.090824+00:00).
+2026-03-19 17:01:40  INFO      email_sender — Email sent to cmoskowitz@gmail.com (50 jobs)
+2026-03-19 17:01:40  INFO      state — [state] Run recorded.
+2026-03-19 19:00:05  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-19 19:00:05  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-19 19:00:05  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Indeed
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Dice
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Monster
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: The Muse
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Builtin
+2026-03-19 19:00:09  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-19 19:00:09  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-19 19:00:09  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-19 19:00:22  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-19 19:00:30  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-19 19:00:39  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-19 19:00:49  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-19 19:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-19 19:01:08  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-19 19:01:20  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-19 19:01:47  INFO      scrapers —   Indeed → 108 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Dice → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Monster → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Builtin → 154 result(s)
+2026-03-19 19:01:47  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-19 19:01:47  INFO      scrapers — Fuzzy dedup removed 118 near-duplicate(s).
+2026-03-19 19:01:47  INFO      jobhelp — After fuzzy dedup: 344 unique job(s).
+2026-03-19 19:01:47  INFO      state — [state] Filtered 295 already-seen job(s).
+2026-03-19 19:01:47  INFO      jobhelp — After state filter: 49 new job(s) to report.
+2026-03-19 19:01:47  INFO      jobhelp — Geo-priority: 6 NJ/CT/NYC job(s) sorted to top.
+2026-03-19 19:01:47  INFO      state — [state] Cached 49 job(s) for dashboard (run_ts=2026-03-19T23:01:47.334804+00:00).
+2026-03-19 19:01:48  INFO      email_sender — Email sent to cmoskowitz@gmail.com (49 jobs)
+2026-03-19 19:01:48  INFO      state — [state] Run recorded.
+2026-03-20 07:00:06  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-20 07:00:06  INFO      state — [state] No prior run today — using 24h window.
+2026-03-20 07:00:06  INFO      jobhelp — Search window: last 24 hour(s).
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Indeed
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Dice
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Monster
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: The Muse
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Builtin
+2026-03-20 07:00:10  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-20 07:00:10  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-20 07:00:10  INFO      scrapers — [LinkedIn] Guest API returned 5 result(s) for 'CTO'.
+2026-03-20 07:00:12  INFO      scrapers — [LinkedIn] Guest API returned 5 result(s) for 'CIO'.
+2026-03-20 07:00:14  INFO      scrapers — [LinkedIn] Guest API returned 4 result(s) for 'VP of Technology'.
+2026-03-20 07:00:16  INFO      scrapers — [LinkedIn] Guest API returned 9 result(s) for 'Head of IT'.
+2026-03-20 07:00:18  INFO      scrapers — [LinkedIn] Guest API returned 7 result(s) for 'Head of Infrastructure'.
+2026-03-20 07:00:20  INFO      scrapers — [LinkedIn] Guest API returned 4 result(s) for 'SVP of Technology'.
+2026-03-20 07:00:22  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-20 07:00:35  INFO      scrapers — [LinkedIn] Guest API returned 4 result(s) for 'Director of Technology'.
+2026-03-20 07:01:45  INFO      scrapers —   Indeed → 112 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   LinkedIn → 42 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Glassdoor → 200 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Dice → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Monster → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Adzuna → 96 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Builtin → 155 result(s)
+2026-03-20 07:01:45  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-20 07:01:45  INFO      scrapers — Fuzzy dedup removed 169 near-duplicate(s).
+2026-03-20 07:01:45  INFO      jobhelp — After fuzzy dedup: 436 unique job(s).
+2026-03-20 07:01:45  INFO      jobhelp — After state filter: 436 new job(s) to report.
+2026-03-20 07:01:45  INFO      jobhelp — Geo-priority: 44 NJ/CT/NYC job(s) sorted to top.
+2026-03-20 07:01:45  INFO      state — [state] Cached 436 job(s) for dashboard (run_ts=2026-03-20T11:01:45.925209+00:00).
+2026-03-20 07:01:48  INFO      email_sender — Email sent to cmoskowitz@gmail.com (436 jobs)
+2026-03-20 07:01:48  INFO      state — [state] Run recorded.
+2026-03-20 09:00:01  INFO      jobhelp — JobHelp v3 — JobHelp Version 3
+2026-03-20 09:00:01  INFO      state — [state] Last run was 2.0h ago — using 2h window.
+2026-03-20 09:00:01  INFO      jobhelp — Search window: last 2 hour(s).
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Indeed
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: LinkedIn
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: ZipRecruiter
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Glassdoor
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Dice
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: SimplyHired
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Monster
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: The Muse
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Adzuna
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: CareerBuilder
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: RemoteOK
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Jobicy
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Builtin
+2026-03-20 09:00:03  INFO      scrapers — Scraper enabled: Wellfound
+2026-03-20 09:00:03  INFO      scrapers — JobHelp v3 — 14 board(s) × 8 title(s) [parallel]
+2026-03-20 09:00:03  INFO      scrapers — [LinkedIn] Guest API empty for 'CTO', trying Playwright.
+2026-03-20 09:00:14  INFO      scrapers — [LinkedIn] Guest API empty for 'CIO', trying Playwright.
+2026-03-20 09:00:24  INFO      scrapers — [LinkedIn] Guest API empty for 'VP of Technology', trying Playwright.
+2026-03-20 09:00:34  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of IT', trying Playwright.
+2026-03-20 09:00:47  INFO      scrapers — [LinkedIn] Guest API empty for 'Head of Infrastructure', trying Playwright.
+2026-03-20 09:00:57  INFO      scrapers — [LinkedIn] Guest API empty for 'SVP of Technology', trying Playwright.
+2026-03-20 09:01:04  INFO      scrapers — [LinkedIn] Guest API empty for 'EUC', trying Playwright.
+2026-03-20 09:01:14  INFO      scrapers — [LinkedIn] Guest API empty for 'Director of Technology', trying Playwright.
+2026-03-20 09:01:43  INFO      scrapers —   Indeed → 110 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   LinkedIn → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   ZipRecruiter → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Glassdoor → 175 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Dice → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   SimplyHired → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Monster → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   The Muse → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Adzuna → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   CareerBuilder → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   RemoteOK → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Jobicy → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Builtin → 155 result(s)
+2026-03-20 09:01:43  INFO      scrapers —   Wellfound → 0 result(s)
+2026-03-20 09:01:43  INFO      scrapers — Fuzzy dedup removed 97 near-duplicate(s).
+2026-03-20 09:01:43  INFO      jobhelp — After fuzzy dedup: 343 unique job(s).
+2026-03-20 09:01:43  INFO      state — [state] Filtered 237 already-seen job(s).
+2026-03-20 09:01:43  INFO      jobhelp — After state filter: 106 new job(s) to report.
+2026-03-20 09:01:43  INFO      jobhelp — Geo-priority: 10 NJ/CT/NYC job(s) sorted to top.
+2026-03-20 09:01:43  INFO      state — [state] Cached 106 job(s) for dashboard (run_ts=2026-03-20T13:01:43.553998+00:00).
+2026-03-20 09:01:45  INFO      email_sender — Email sent to cmoskowitz@gmail.com (106 jobs)
+2026-03-20 09:01:45  INFO      state — [state] Run recorded.
